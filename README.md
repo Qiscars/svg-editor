@@ -44,7 +44,7 @@ rect#bg created
 
 ```text
 svg-editor/
-├── doc/            # 设计文档（doc/README.md 为作业正文）
+├── doc/            # 文档：README.md 为作业正文，PLAN.md 为三天的进度看板
 ├── src/            # 源码，按架构分层组织
 ├── tests/          # 单元测试
 ├── package.json
