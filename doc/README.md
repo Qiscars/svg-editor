@@ -1,0 +1,309 @@
+# Lab1 Phase 1 — CLI SVG 编辑器 · 设计文档
+
+> 本文档是作业的正式交付物，包含**架构方案**、**过程记录**、**一致性自查**、**质量保证手段**四节。
+> 文档随实现迭代，每次实质性变更记入 [§5 修订记录](#5-修订记录)。
+>
+> 当前版本：**v1（仓库搭建 / 架构方案初稿）** — 此时仅完成工程骨架与方案设计，
+> 实现尚未开始，[§3 一致性自查](#3-一致性自查) 留待实现完成后如实填写。
+
+---
+
+## 目录
+
+1. [架构方案](#1-架构方案)
+2. [过程记录](#2-过程记录)
+3. [一致性自查](#3-一致性自查)
+4. [质量保证手段](#4-质量保证手段)
+5. [修订记录](#5-修订记录)
+
+---
+
+## 1. 架构方案
+
+### 1.1 模块划分
+
+代码按**分层**组织，每层一个目录，层内"一类一文件"（文件名 = 类名）。
+
+```text
+svg-editor/
+├── doc/                       # 设计文档（本文件）
+├── src/
+│   ├── main.ts                # 组合根：装配对象、启动 REPL
+│   │
+│   ├── domain/                # 【L0 领域模型】纯内存数据结构与几何语义，零 I/O
+│   │   ├── Shape.ts           #   抽象基类：id、父指针、几何/属性访问器的抽象契约
+│   │   ├── Container.ts       #   Composite：容器（对应 <g> 与画布根）
+│   │   ├── Canvas.ts          #   画布根容器（宽高 + viewBox）
+│   │   ├── Document.ts        #   当前文档：Canvas + id 索引 + 结构不变量
+│   │   ├── IdIndex.ts         #   id → Shape 的唯一索引（唯一性/查找）
+│   │   ├── ShapeError.ts      #   领域错误（no such shape / id already exists …）
+│   │   └── leaf/              #   叶子图形：Rect / Circle / Ellipse / Line / TextShape
+│   │
+│   ├── commands/              # 【L1 命令层】Command 模式，一次编辑 = 一个对象
+│   │   ├── Command.ts         #   接口：execute() / undo() / describe()
+│   │   ├── CommandHistory.ts  #   undo / redo 双栈 + "IO 之后禁止 undo" 的闸门
+│   │   ├── CommandContext.ts  #   命令可用的上下文（Document + 结果输出端口）
+│   │   └── impl/              #   Create / Delete / Move / Scale / Set / Group /
+│   │                          #   Ungroup / AddTo / Reorder(front,back)
+│   │
+│   ├── io/                    # 【L1 持久化层】SVG 文本 ↔ 领域模型
+│   │   ├── FileGateway.ts     #   文件读写的唯一出口（错误 → cannot read/write file）
+│   │   ├── SvgSerializer.ts   #   Document → SVG 文本
+│   │   └── SvgParser.ts       #   SVG 文本 → Document（缺 id 自动补名 + 警告）
+│   │
+│   ├── registry/              # 【L2 装配层】仅有的两处"按名字分派"
+│   │   ├── ShapeFactory.ts    #   图形类型名 → 构造函数（分派点 ①）
+│   │   └── CommandRegistry.ts #   命令名 → 命令构造器 + 用法文本（分派点 ②）
+│   │
+│   ├── app/                   # 【L2 应用层】用例编排
+│   │   └── EditorApp.ts       #   持有 Document / History，把结构化调用变成命令执行
+│   │
+│   └── cli/                   # 【L3 表现层】REPL、分词、渲染
+│       ├── Repl.ts            #   读行循环、提示符、注释与空行
+│       ├── Tokenizer.ts       #   处理双引号参数、`#` 注释
+│       ├── CommandParser.ts   #   文本 → 结构化调用（token 序列 → 参数对象）
+│       ├── ConsoleOutput.ts   #   输出端口的唯一实现
+│       └── render/            #   TreeRenderer / ShowRenderer / HelpRenderer
+│
+└── tests/                     # 单元测试 + 场景回放测试
+```
+
+**各模块职责**
+
+| 模块 | 职责 | 明确*不*做的事 |
+|---|---|---|
+| `domain` | 图形树的唯一真相：树结构、id 索引、几何属性、属性的读写与合法性（`set` 白名单） | 不解析文本、不读写文件、不打印、不知道 undo 的存在 |
+| `commands` | 把"一次编辑"封装成可执行/可撤销对象；维护 undo/redo 栈 | 不解析命令行文本、不碰文件、不直接 `console.log` |
+| `io` | SVG 文本与 `Document` 的双向转换；文件系统访问 | 不实现编辑语义、不做撤销、不决定 CLI 输出格式 |
+| `registry` | 名字 → 实现的查表；命令用法文本的单一来源 | 不含业务规则（构造完命令就退出） |
+| `app` | 用例编排：接收结构化调用 → 造命令 → 执行 → 组织结果 | 不做分词、不格式化输出 |
+| `cli` | 行级 I/O、分词与参数解析、结果渲染（tree/show/help/错误行） | 不直接改图形树（一律经 `app` → `commands`） |
+
+**组件图（PlantUML）**
+
+```plantuml
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+package "cli（表现层）" {
+  [Repl]
+  [Tokenizer]
+  [CommandParser]
+  [Renderers]
+}
+
+package "app（应用层）" {
+  [EditorApp]
+}
+
+package "commands（命令层）" {
+  [Command 接口]
+  [CommandHistory]
+  [具体命令]
+}
+
+package "registry（装配层）" {
+  [CommandRegistry]
+  [ShapeFactory]
+}
+
+package "domain（领域模型）" {
+  [Document]
+  [Shape 抽象]
+  [Container]
+  [Leaf 图形]
+}
+
+package "io（持久化层）" {
+  [FileGateway]
+  [SvgParser]
+  [SvgSerializer]
+}
+
+[Repl] --> [Tokenizer]
+[Repl] --> [CommandParser]
+[Repl] --> [Renderers]
+[Repl] --> [EditorApp]
+[CommandParser] --> [CommandRegistry]
+[EditorApp] --> [CommandHistory]
+[EditorApp] --> [Document]
+[EditorApp] --> [Command 接口]
+[CommandHistory] --> [Command 接口]
+[具体命令] --> [Document]
+[CommandRegistry] --> [具体命令]
+[CommandRegistry] --> [Command 接口]
+[SvgParser] --> [ShapeFactory]
+[FileGateway] --> [SvgParser]
+[FileGateway] --> [SvgSerializer]
+[SvgSerializer] --> [Document]
+[Document] *-- [Shape 抽象]
+[Shape 抽象] <|-- [Container]
+[Shape 抽象] <|-- [Leaf 图形]
+[EditorApp] ..> [FileGateway]
+@enduml
+```
+
+箭头方向即编译期 `import` 方向，与 [§1.3 依赖方向规则](#13-依赖方向规则) 一一对应。
+
+### 1.2 设计模式的选择
+
+#### ① Command —— 撤销重做的骨架（作业要求必选）
+
+**问题**：`undo` 必须精确还原上一次编辑，且 `group g1 r1 c1 t1` 这种多目标操作整体算**一个**撤销单元。
+
+**落地方式**：
+
+- 每个编辑类命令实现同一接口 `Command`：
+
+  ```ts
+  interface Command {
+    execute(): CommandOutcome;   // 正向执行
+    undo(): CommandOutcome;      // 精确回滚
+    describe(): string;          // 成功摘要，如 `rect#r1 moved to (130,20)`
+  }
+  ```
+
+- `CommandHistory` 只认这个接口，维护 `undoStack` / `redoStack`：
+  `undo()` → 弹栈并调用 `command.undo()`；`redo()` → 弹 redo 栈并重新 `execute()`。
+- "一条命令 = 一个单元"是**天然结论**：多目标操作写在同一个命令对象里，只有一对
+  `execute/undo`，不会拆成多个栈元素。
+- 撤销的反向信息由命令**自己**以 Memento 形式持有（删掉的子树快照 + 父节点 + 下标、
+  属性旧值等），而不是对整个文档拍快照——避免 undo 栈随文档规模线性膨胀。
+- `undo` 后若有新编辑，`redoStack` 清空（由 `CommandHistory` 单点保证）。
+
+#### ② Composite —— 容器与叶子一视同仁
+
+`Shape` 抽象基类统一 `id / parent / move / scale / setAttribute / delete` 语义；
+`Container` 递归转发给子节点，叶子自己实现几何变换。因此
+`move node2 0 100`（一个 `<g>`）与 `move c1 30 0`（一个 `<circle>`）在命令层毫无区别，
+**命令实现里不出现任何 `if (isContainer)` 分支**。
+
+#### ③ Factory + Registry —— 仅有的两处按名字分派
+
+作业允许的"未模块化"只有两处，本方案把它们**各自压到一行查表**，并登记为待重构项：
+
+- `ShapeFactory`：`type 名 → 构造函数`，供 `create` 与 `SvgParser` 共用；
+- `CommandRegistry`：`命令名 → 命令构造器 + 用法文本`，供分发与 `help` 共用。
+
+#### ④ 多态序列化 / 多态描述（替代 `switch(tag)`）
+
+`tree`、`show`、`save` 都需要"按图形类型做不同展示"，方案里**不写 `switch(tag)`**：
+
+- `Shape.toSvgElement()` 由子类实现 —— 序列化不集中在一处大 `switch`；
+- `Shape.describeInline()` / `Shape.describeDetail()` 由子类实现 —— `tree`/`show` 的
+  几何属性内联格式（`rect` 显示 `x= y= w= h=`，`circle` 显示 `cx= cy= r=`）自然分派；
+- 属性的 `set` 白名单同样由各类型声明（`settableAttributes()`），未知属性统一报
+  `error: unknown attribute: <attr>`。
+
+#### ⑤ Template Method —— `set` 的统一校验流程
+
+`Shape.setAttribute()` 是模板方法：先在 `settableAttributes()` 声明的白名单里校验，
+再交给子类的 `applyAttribute()` 做类型化赋值。校验与报错只有一份实现。
+
+### 1.3 依赖方向规则
+
+分层与允许的依赖：
+
+| 层 | 模块 | 允许依赖 | 禁止依赖 |
+|---|---|---|---|
+| L0 | `domain` | 仅 TypeScript 标准库 | 任何其他内部模块；`node:fs` 等 I/O 模块 |
+| L1 | `commands` | `domain` | `io`、`cli`、`app`、`registry` |
+| L1 | `io` | `domain`、`registry` 的 `ShapeFactory` | `commands`、`cli`、`app` |
+| L2 | `registry` | `domain`、`commands` | `io`、`cli`、`app` |
+| L2 | `app` | `domain`、`commands`、`io`、`registry` | `cli` |
+| L3 | `cli` | `app`、`domain`（只读类型与渲染）、`registry`（取用法文本） | `io` 的写操作 |
+| L4 | `main.ts` | 所有层（唯一装配点） | — |
+
+**附加规则**
+
+1. **只允许"上层 → 下层"**，禁止同层横向依赖（`io` ⇸ `commands`，`commands` ⇸ `io`）。
+2. **`domain` 不认识 XML，也不认识命令行**：它只提供数据结构与几何语义。
+3. **`commands` 不碰文件系统**：`save` / `read` 属于文档类命令，由 `app` 编排 `io`，
+   并且**不进入 undo 栈**（执行后置"IO 闸门"，使 `undo` 报
+   `error: undo not allowed after io command`）。
+4. **输出端口唯一**：`commands` / `app` 不直接写 `stdout`，只把结果返回给 `cli` 渲染；
+   `io` 的错误转成领域错误向上抛，由 `cli` 统一加 `error:` 前缀。
+5. **违反上述任一规则即记为待处理项**，在修订记录中登记并安排修复。
+
+**理由**：把"会变的"（界面、持久化格式、撤销策略）挡在领域之外，使
+`domain` 可以在完全没有 I/O 的情况下被单元测试覆盖；同时保证换一个前端（GUI / HTTP /
+agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` 零改动。
+
+### 1.4 变化点假设
+
+| # | 变化点 | 判断依据 | 为它留了什么 / 为什么不留 |
+|---|---|---|---|
+| 1 | **新增图形类型**（`polygon`/`path`，以及后续插件化的 `box`） | 作业 Phase 2–3 明确要求 `box` 由**插件**注册，`create box` 现在必须报 `unknown shape type` | **留了**：`Shape` 抽象 + `ShapeFactory` 注册表。Phase 2 只需让 `ShapeFactory` 变成可变注册表并引入 `ShapeProvider` 接口，`domain`/`commands` 不动。**本阶段不实现插件机制**，因为它尚无第二个消费者，过早抽象会锁死接口形状 |
+| 2 | **输出通道变化**（CLI → GUI / HTTP / agent 工具调用） | 作业后续阶段会出现画布与"三种通道" | **留了**：`cli` 与 `app` 之间以**结构化调用对象**（`CommandInvocation`）为界，而不是裸字符串；换通道只需新写 adapter。**不留**的是多前端共存的抽象基类——当前只有 CLI 一个消费者 |
+| 3 | **撤销策略变化**（命令逆操作 → 文档快照 / 持久化历史） | 快照法实现简单但内存随文档线性增长；命令逆操作精细但每个命令都要写 `undo` | **留了**：`CommandHistory` 只依赖 `Command` 接口，替换成快照式历史不影响命令实现；命令内部以 Memento 保存旧值，日后换成 `structuredClone` 全量快照只需改 `CommandContext` |
+| 4 | **SVG 序列化格式变化**（`transform` 属性 vs 直接改写子坐标、`data-*` 标记、样式属性扩充） | `box` 的 round-trip 需要 `data-kind`，未来还可能引入 `transform` | **留了**：序列化/解析完全隔离在 `io`，`domain` 只存"语义属性"。**刻意不留**的是可插拔的序列化策略——一种格式一个实现实现即可，多态到策略只增加间接层 |
+| 5 | **`scale` 的语义变化**（当前按作业要求"位置与尺寸同乘"，未来可能要"绕中心缩放"） | 作业定义了一次性语义，但图形编辑器的直觉是绕中心 | **留了**：缩放集中在 `Shape.scale(factor)` 一个方法，改为绕中心只改这一处 + 容器递归策略 |
+| 6 | **寻址方式变化**（id 定位 → 结构路径 `/canvas/g1/rect[2]`） | 作业 §2 明确"结构路径本阶段不要求" | **刻意不留**：id 已是 SVG 规范内的合法寻址手段，且 `IdIndex` 是单点。留一层路径解析器会立刻产生"两套寻址并存"的一致性问题，得不偿失 |
+| 7 | **性能：超大文档**（10k 节点） | 目前所有操作都是 O(n) 递归 | **刻意不留**：作业规模在百级节点，过早引入脏标记/增量索引会让代码复杂度上升而收益为零 |
+
+### 1.5 已知待重构项
+
+| # | 位置 | 现状 | 计划 |
+|---|---|---|---|
+| R1 | `registry/ShapeFactory.ts` | `type 名 → 构造函数` 的 `switch`/查表 | Phase 2 改为可注册的 `Map` + `ShapeProvider` 插槽 |
+| R2 | `registry/CommandRegistry.ts` | `命令名 → 命令构造器` 的查表 | 同上；若命令数量增长，改为 `CommandParser` 负责语法、registry 只负责构造 |
+| R3 | `cli/HelpText.ts` | 帮助文本暂时是静态常量 | 由 `CommandRegistry` 汇总各命令声明的用法生成（见 `HelpText.ts` 注释） |
+
+---
+
+## 2. 过程记录
+
+记录关键、有代表性的讨论与迭代：AI 给了什么建议、发现了什么问题、如何确认并纠正。
+
+### 2.1 阶段 0：仓库搭建（本次）
+
+- **讨论点：先把仓库立起来，还是先写代码？**
+  取舍：作业要求"提交历史须能体现开发过程，禁止 one-shot 大提交"。先把**工程骨架 +
+  架构方案**单独提交，后续每个能力一次提交，历史本身就是开发过程的证据。
+  因此本阶段的提交顺序被刻意设计为
+  `仓库配置 → 工具链 → 架构方案文档 → REPL 骨架`，且第一条提交里没有任何业务逻辑。
+- **讨论点：构建产物要不要入库？**
+  决定：不入库（`.gitignore` 忽略 `dist/`、`node_modules/`），工程用 `npm run cli`
+  一条命令完成"编译 + 启动"，保证 clone 下来即可复现。
+- **待续**：实现阶段的讨论记录（发现的问题、被否掉的方案）在后续迭代中追加。
+
+---
+
+## 3. 一致性自查
+
+> **状态：待填写。** 实现完成后对照本节逐条如实回答，而不是复述方案。
+
+### 3.1 模块划分：实际目录与方案是否一致？
+
+*（实现完成后填写：逐目录对照 §1.1，列出新增/合并/拆分的目录与原因，不一致处必须已在 §5 登记。）*
+
+### 3.2 依赖方向：方案里的规则有没有被违反？
+
+*（实现完成后填写：说明抽样检查的方法，例如用 `rg "^import" src/` 逐层核对 import 目标，
+或加一条脚本断言 `src/domain/**` 不出现 `node:fs`，并附检查结果。）*
+
+---
+
+## 4. 质量保证手段
+
+*（本节随实现逐步补充实测结果；以下为约定采用的手段。）*
+
+| 手段 | 具体做法 | 期望证据 |
+|---|---|---|
+| 类型检查 | `tsc --noEmit`（`strict`、`noUncheckedIndexedAccess`、`noImplicitOverride`） | CI 式脚本 `npm run typecheck` 零错误 |
+| 领域单元测试 | `domain` 无 I/O，可对 Composite 语义（move/scale 递归）、id 唯一性、set 白名单直接断言 | `tests/domain/*` |
+| 命令测试 | 每个命令的 `execute` → `undo` 后**结构深比较**回到执行前状态 | `tests/commands/*` |
+| 场景回放（对拍） | 把作业 §6 的 transcript 存成脚本，回放后逐行比对 stdout | `tests/scenarios/*.txt` + 快照 |
+| Round-trip | `save` → `read` → 深比较，并断言序列化文本可被浏览器/解析器接受 | `tests/io/*` |
+| 错误路径 | §4.2 每一行错误信息都有一个用例，断言"失败不改状态" | `tests/commands/errors.test.ts` |
+| 手工验收 | 用浏览器打开 `save` 出的 SVG 目视检查；`tree`/`show` 与预期结构对照 | 截图 / 记录 |
+
+---
+
+## 5. 修订记录
+
+| 版本 | 提交主题 | 变更内容 |
+|---|---|---|
+| v1 | `docs(architecture): 架构方案第一版` | 建立模块划分、依赖规则、变化点假设；一致性自查与质量保证留待实现后补全 |
