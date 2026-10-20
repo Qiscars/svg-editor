@@ -1,5 +1,12 @@
-/**
- * CLI 入口。此刻只有一个占位实现：确认构建链路（tsc → dist → node）能跑通，
- * 真正的 REPL 在下一个提交里接入。
- */
-process.stdout.write('svg-editor 0.1\n');
+import { Repl } from './cli/Repl.js';
+
+async function main(): Promise<void> {
+  const repl = new Repl(process.stdin, process.stdout);
+  await repl.run();
+}
+
+main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`fatal: ${message}\n`);
+  process.exitCode = 1;
+});
