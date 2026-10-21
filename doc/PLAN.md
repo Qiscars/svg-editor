@@ -18,14 +18,14 @@
 
 | 项 | 值 |
 |---|---|
-| 今天 | 2026-10-20 |
-| 当前阶段 | **Day 0 · 仓库与骨架（已收尾）** |
-| 已完成提交 | 5 / 32 |
-| 最近一次提交 | `docs(plan): 三天开发计划与进度看板` |
-| 下一个提交 | #6 `feat(domain): Shape 抽象基类、领域错误与 id 索引`（Day 1 开工） |
-| 下次开工第一件事 | **跑 [§7.2 前置检查](#72-检查算法机械可执行)**：找编号最小的未完成提交 `N`，与计划区间比较，有欠账先追赶 |
+| 今天 | 2026-10-21 |
+| 当前阶段 | **Day 1 · 领域模型 + 命令层（进行中：domain 已完成，命令层未开始）** |
+| 已完成提交 | 9 / 32 |
+| 最近一次提交 | `5399bff feat(domain): Document 与结构不变量` |
+| 下一个提交 | #10 `test(domain): 递归变换、属性白名单与 id 唯一性`（Day 1 第 2 段，10/21 17:52） |
+| 本次前置检查 | `N = 6`，本段区间 `[6, 9]`，`6 ≤ N ≤ 9` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
-| 距离截止 | 5 天（含 2 天缓冲） |
+| 距离截止 | 4 天（含 2 天缓冲） |
 
 ---
 
@@ -61,20 +61,20 @@
 
 **目标**：`domain` 与 `commands` 两层跑通，在没有 I/O 的情况下证明 Composite 语义与撤销正确性。
 
-| # | 提交 | 产出 | 状态 |
-|---|---|---|---|
-| 6 | `feat(domain): Shape 抽象基类、领域错误与 id 索引` | `Shape.ts` / `ShapeError.ts` / `IdIndex.ts` | ⬜ |
-| 7 | `feat(domain): 叶子图形 rect/circle/ellipse/line/text` | `domain/leaf/*` | ⬜ |
-| 8 | `feat(domain): Container 与 Canvas，落地 Composite 递归语义` | `Container.ts` / `Canvas.ts` | ⬜ |
-| 9 | `feat(domain): Document 与结构不变量` | `Document.ts` | ⬜ |
-| 10 | `test(domain): 递归变换、属性白名单与 id 唯一性` | `tests/domain/*` | ⬜ |
-| 11 | `feat(commands): Command 接口、CommandContext 与 CommandHistory` | `commands/*.ts` | ⬜ |
-| 12 | `feat(commands): create / delete` | `commands/impl/*` | ⬜ |
-| 13 | `feat(commands): move / scale` | `commands/impl/*` | ⬜ |
-| 14 | `feat(commands): set（模板方法 + 白名单校验）` | `commands/impl/*` | ⬜ |
-| 15 | `feat(commands): group / ungroup / addto` | `commands/impl/*` | ⬜ |
-| 16 | `feat(commands): front / back 层级调整` | `commands/impl/*` | ⬜ |
-| 17 | `test(commands): execute→undo 结构深比较` | `tests/commands/*` | ⬜ |
+| # | 提交 | 产出 | 状态 | sha |
+|---|---|---|---|---|
+| 6 | `feat(domain): Shape 抽象基类、领域错误与 id 索引` | `Shape.ts` / `ShapeError.ts` / `IdIndex.ts` | ✅ | `ea54ccd` |
+| 7 | `feat(domain): 叶子图形 rect/circle/ellipse/line/text` | `domain/leaf/*` | ✅ | `d3e28f0` |
+| 8 | `feat(domain): Container 与 Canvas，落地 Composite 递归语义` | `Container.ts` / `Canvas.ts` | ✅ | `aeae360` |
+| 9 | `feat(domain): Document 与结构不变量` | `Document.ts` | ✅ | `5399bff` |
+| 10 | `test(domain): 递归变换、属性白名单与 id 唯一性` | `tests/domain/*` | ⬜ | — |
+| 11 | `feat(commands): Command 接口、CommandContext 与 CommandHistory` | `commands/*.ts` | ⬜ | — |
+| 12 | `feat(commands): create / delete` | `commands/impl/*` | ⬜ | — |
+| 13 | `feat(commands): move / scale` | `commands/impl/*` | ⬜ | — |
+| 14 | `feat(commands): set（模板方法 + 白名单校验）` | `commands/impl/*` | ⬜ | — |
+| 15 | `feat(commands): group / ungroup / addto` | `commands/impl/*` | ⬜ | — |
+| 16 | `feat(commands): front / back 层级调整` | `commands/impl/*` | ⬜ | — |
+| 17 | `test(commands): execute→undo 结构深比较` | `tests/commands/*` | ⬜ | — |
 
 **Day 1 验收标准（三条全过才算完成）**
 
@@ -86,16 +86,16 @@
 
 **目标**：从"能跑的库"变成"能用的 CLI"，用作业 §6 的 transcript 做第一次端到端验收。
 
-| # | 提交 | 产出 | 状态 |
-|---|---|---|---|
-| 18 | `feat(io): ShapeFactory 与 SVG 序列化` | `registry/ShapeFactory.ts` / `io/SvgSerializer.ts` | ⬜ |
-| 19 | `feat(io): SVG 解析、缺 id 自动补名与警告` | `io/SvgParser.ts` / `io/FileGateway.ts` | ⬜ |
-| 20 | `feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` | `app/EditorApp.ts` | ⬜ |
-| 21 | `feat(cli): Tokenizer 与 CommandParser（双引号、in 子句）` | `cli/Tokenizer.ts` / `cli/CommandParser.ts` | ⬜ |
-| 22 | `feat(cli): CommandRegistry 与 help 生成（消除待重构项 R3）` | `registry/CommandRegistry.ts` | ⬜ |
-| 23 | `feat(cli): tree / show 渲染器` | `cli/render/*` | ⬜ |
-| 24 | `feat(cli): 统一 error: 前缀与成功摘要` | `cli/Repl.ts` 收口 | ⬜ |
-| 25 | `docs(process): 追加 Day 1–2 过程记录` | `doc/README.md §2` | ⬜ |
+| # | 提交 | 产出 | 状态 | sha |
+|---|---|---|---|---|
+| 18 | `feat(io): ShapeFactory 与 SVG 序列化` | `registry/ShapeFactory.ts` / `io/SvgSerializer.ts` | ⬜ | — |
+| 19 | `feat(io): SVG 解析、缺 id 自动补名与警告` | `io/SvgParser.ts` / `io/FileGateway.ts` | ⬜ | — |
+| 20 | `feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` | `app/EditorApp.ts` | ⬜ | — |
+| 21 | `feat(cli): Tokenizer 与 CommandParser（双引号、in 子句）` | `cli/Tokenizer.ts` / `cli/CommandParser.ts` | ⬜ | — |
+| 22 | `feat(cli): CommandRegistry 与 help 生成（消除待重构项 R3）` | `registry/CommandRegistry.ts` | ⬜ | — |
+| 23 | `feat(cli): tree / show 渲染器` | `cli/render/*` | ⬜ | — |
+| 24 | `feat(cli): 统一 error: 前缀与成功摘要` | `cli/Repl.ts` 收口 | ⬜ | — |
+| 25 | `docs(process): 追加 Day 1–2 过程记录` | `doc/README.md §2` | ⬜ | — |
 
 **Day 2 验收标准**
 
@@ -108,16 +108,16 @@
 
 **目标**：不再加功能，只做"证明它对"和"把证据写进文档"。
 
-| # | 提交 | 产出 | 状态 |
-|---|---|---|---|
-| 26 | `tools: 依赖方向检查脚本` | `tools/check-layers.mjs` | ⬜ |
-| 27 | `test(scenarios): 回放 §6 与 §6.1 transcript` | `tests/scenarios/*` | ⬜ |
-| 28 | `test(io): save→read round-trip 与缺 id 补名` | `tests/io/*` | ⬜ |
-| 29 | `test(commands): 错误路径 §4.2 全覆盖` | `tests/commands/errors.test.ts` | ⬜ |
-| 30 | `docs: 补齐一致性自查与质量保证实测结果` | `doc/README.md §3 §4` | ⬜ |
-| 31 | `docs: 过程记录定稿与修订记录` | `doc/README.md §2 §5` | ⬜ |
-| 32 | `chore(release): 0.1.0` | `package.json` | ⬜ |
-| — | `git tag -a final` + `git push origin final` | 远程 tag | ⬜ |
+| # | 提交 | 产出 | 状态 | sha |
+|---|---|---|---|---|
+| 26 | `tools: 依赖方向检查脚本` | `tools/check-layers.mjs` | ⬜ | — |
+| 27 | `test(scenarios): 回放 §6 与 §6.1 transcript` | `tests/scenarios/*` | ⬜ | — |
+| 28 | `test(io): save→read round-trip 与缺 id 补名` | `tests/io/*` | ⬜ | — |
+| 29 | `test(commands): 错误路径 §4.2 全覆盖` | `tests/commands/errors.test.ts` | ⬜ | — |
+| 30 | `docs: 补齐一致性自查与质量保证实测结果` | `doc/README.md §3 §4` | ⬜ | — |
+| 31 | `docs: 过程记录定稿与修订记录` | `doc/README.md §2 §5` | ⬜ | — |
+| 32 | `chore(release): 0.1.0` | `package.json` | ⬜ | — |
+| — | `git tag -a final` + `git push origin final` | 远程 tag | ⬜ | — |
 
 **Day 3 验收标准（= 交付检查清单）**
 
@@ -172,6 +172,15 @@ node_modules/.bin/vitest run
 |---|---|---|---|---|---|
 | 1 | 2026-10-20 | 建立本地仓库与远程仓库、TypeScript 工具链、架构方案 v1、REPL 骨架 | #1–#4 | 远程 `Qiscars/svg-editor` 可用，4 个提交已推送 | 业务逻辑为 0，等 Day 1 开始 |
 | 2 | 2026-10-20 | 制定 3 天开发计划，建立本进度看板 | #5 | 计划与看板落地 | 开始 Day 1 |
+| 3 | 2026-10-21 | **前置检查：`N = 6`，本段 `[6, 9]`，无欠账**。推进 `domain` 底座：抽象基类、叶子图形、Composite 容器与画布、Document 与 id 索引 | #6–#9 | 三条门禁全绿；冒烟脚本验证 move/scale 递归、id 唯一性、7 条错误文案、clone 深拷贝隔离、`show` 输出与作业 §5.2 一致 | 无欠账。留给 Day 1 第 2 段处理的发现见下 |
+
+### 5.1 本段发现与待办
+
+| # | 发现 | 处理 |
+|---|---|---|
+| 1 | `Document.attach` 在"移动归属"路径（图形已登记、换父容器）上会误报 `id already exists` | **本段内已修**：区分"首次挂载"与"移动归属"，后者只改父指针、不重复登记（`5399bff`） |
+| 2 | `doc/README.md §1.2 ④` 写的是 `Shape.toSvgElement()` 由子类实现，但那会让 `domain` 依赖 XML 概念，与 §1.3「domain 不认识 XML」直接冲突 | 待 #18 实现 io 时改为"序列化器遍历 `attributes()` 数据驱动"，同一提交内更新 §1.2 与 §5 修订记录 |
+| 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | 待 #23 落地为"全局统一列 + 至少 1 空格"，并在 §2 过程记录写明这处取舍 |
 
 ---
 
