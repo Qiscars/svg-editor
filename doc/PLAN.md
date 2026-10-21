@@ -19,11 +19,11 @@
 | 项 | 值 |
 |---|---|
 | 今天 | 2026-10-21 |
-| 当前阶段 | **Day 1 · 领域模型 + 命令层（进行中：domain 已完成，命令层未开始）** |
-| 已完成提交 | 9 / 32 |
-| 最近一次提交 | `5399bff feat(domain): Document 与结构不变量` |
-| 下一个提交 | #10 `test(domain): 递归变换、属性白名单与 id 唯一性`（Day 1 第 2 段，10/21 17:52） |
-| 本次前置检查 | `N = 6`，本段区间 `[6, 9]`，`6 ≤ N ≤ 9` → 无欠账，正常推进 |
+| 当前阶段 | **Day 1 · 领域模型 + 命令层（进行中：domain 与命令基础设施已完成）** |
+| 已完成提交 | 11 / 32 |
+| 最近一次提交 | `a2ed4cf feat(commands): Command 接口、CommandContext 与 CommandHistory` |
+| 下一个提交 | #12 `feat(commands): create / delete`（Day 1 第 3 段，10/21 21:14） |
+| 本次前置检查 | `N = 10`，本段区间 `[10, 11]`，`10 ≤ N ≤ 11` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
 | 距离截止 | 4 天（含 2 天缓冲） |
 
@@ -67,8 +67,8 @@
 | 7 | `feat(domain): 叶子图形 rect/circle/ellipse/line/text` | `domain/leaf/*` | ✅ | `d3e28f0` |
 | 8 | `feat(domain): Container 与 Canvas，落地 Composite 递归语义` | `Container.ts` / `Canvas.ts` | ✅ | `aeae360` |
 | 9 | `feat(domain): Document 与结构不变量` | `Document.ts` | ✅ | `5399bff` |
-| 10 | `test(domain): 递归变换、属性白名单与 id 唯一性` | `tests/domain/*` | ⬜ | — |
-| 11 | `feat(commands): Command 接口、CommandContext 与 CommandHistory` | `commands/*.ts` | ⬜ | — |
+| 10 | `test(domain): 递归变换、属性白名单与 id 唯一性` | `tests/domain/*` | ✅ | `72ec73a` |
+| 11 | `feat(commands): Command 接口、CommandContext 与 CommandHistory` | `commands/*.ts` | ✅ | `a2ed4cf` |
 | 12 | `feat(commands): create / delete` | `commands/impl/*` | ⬜ | — |
 | 13 | `feat(commands): move / scale` | `commands/impl/*` | ⬜ | — |
 | 14 | `feat(commands): set（模板方法 + 白名单校验）` | `commands/impl/*` | ⬜ | — |
@@ -173,6 +173,7 @@ node_modules/.bin/vitest run
 | 1 | 2026-10-20 | 建立本地仓库与远程仓库、TypeScript 工具链、架构方案 v1、REPL 骨架 | #1–#4 | 远程 `Qiscars/svg-editor` 可用，4 个提交已推送 | 业务逻辑为 0，等 Day 1 开始 |
 | 2 | 2026-10-20 | 制定 3 天开发计划，建立本进度看板 | #5 | 计划与看板落地 | 开始 Day 1 |
 | 3 | 2026-10-21 | **前置检查：`N = 6`，本段 `[6, 9]`，无欠账**。推进 `domain` 底座：抽象基类、叶子图形、Composite 容器与画布、Document 与 id 索引 | #6–#9 | 三条门禁全绿；冒烟脚本验证 move/scale 递归、id 唯一性、7 条错误文案、clone 深拷贝隔离、`show` 输出与作业 §5.2 一致 | 无欠账。留给 Day 1 第 2 段处理的发现见下 |
+| 4 | 2026-10-21 | **前置检查：`N = 10`，本段 `[10, 11]`，无欠账**。补 49 个领域用例；搭命令层基础设施（Command / CommandContext / CommandHistory / CommandError） | #10–#11 | 门禁全绿，累计 60 个用例通过；undo/redo 双栈与 IO 闸门四种场景均有覆盖 | 无欠账。具体命令待第 3 段 |
 
 ### 5.1 本段发现与待办
 
@@ -181,6 +182,8 @@ node_modules/.bin/vitest run
 | 1 | `Document.attach` 在"移动归属"路径（图形已登记、换父容器）上会误报 `id already exists` | **本段内已修**：区分"首次挂载"与"移动归属"，后者只改父指针、不重复登记（`5399bff`） |
 | 2 | `doc/README.md §1.2 ④` 写的是 `Shape.toSvgElement()` 由子类实现，但那会让 `domain` 依赖 XML 概念，与 §1.3「domain 不认识 XML」直接冲突 | 待 #18 实现 io 时改为"序列化器遍历 `attributes()` 数据驱动"，同一提交内更新 §1.2 与 §5 修订记录 |
 | 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | 待 #23 落地为"全局统一列 + 至少 1 空格"，并在 §2 过程记录写明这处取舍 |
+| 4 | 写领域测试时发现 `Container.insertChild` 自环抛的是 `invalid id`，语义不对 | **本段内已修**：新增 `ShapeError.cannotInsertIntoSelf`（`72ec73a`） |
+| 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | 待 #24「统一 error: 前缀」时收口成一个共同的基类，届时同步更新 §1.3 |
 
 ---
 
