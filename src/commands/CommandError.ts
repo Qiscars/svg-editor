@@ -26,4 +26,12 @@ export class CommandError extends Error {
   static nothingToRedo(): CommandError {
     return new CommandError('nothing to redo');
   }
+
+  static emptyGroupList(): CommandError {
+    return new CommandError('group needs at least one shape');
+  }
+
+  static duplicateGroupMember(id: string): CommandError {
+    return new CommandError(`duplicate id in group: ${id}`);
+  }
 }
