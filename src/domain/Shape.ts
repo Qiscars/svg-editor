@@ -1,3 +1,4 @@
+import type { Container } from './Container.js';
 import { Numbers } from './Numbers.js';
 import { ShapeError } from './ShapeError.js';
 
@@ -15,18 +16,21 @@ export interface AttributeSpec {
   write(raw: string): void;
 }
 
+/** 叶子的子节点列表：共享一个冻结的空数组，避免每次访问都新建对象。 */
+const EMPTY_CHILDREN: readonly Shape[] = Object.freeze([]);
+
 /**
  * 所有图形的抽象基类。
  *
  * 职责边界：只描述"一个图形是什么、能怎么变换、有哪些属性"，
  * **不认识 XML、不认识命令行、不认识 undo**（见 doc/README.md §1.3）。
  *
- * 父指针与子节点列表不在这里——它们属于 Composite 结构，
- * 与 `Container` 一起引入（见提交 #8）。
+ * 父指针在基类，因为容器与叶子都需要它；子节点列表属于 `Container`。
  */
 export abstract class Shape {
   readonly id: string;
 
+  private parentValue: Container | null = null;
   private fillValue: string | undefined;
   private strokeValue: string | undefined;
   private strokeWidthValue: number | undefined;
@@ -41,6 +45,36 @@ export abstract class Shape {
 
   /** 图形类型名，如 `rect` / `circle` / `g`。 */
   abstract get kind(): string;
+
+  /** 父容器；画布根与游离图形为 `null`。 */
+  get parent(): Container | null {
+    return this.parentValue;
+  }
+
+  /**
+   * 挂载/摘除时由容器维护父指针。
+   * 命令层之外不应直接调用——结构变更一律走 `Document`。
+   */
+  attachTo(parent: Container | null): void {
+    this.parentValue = parent;
+  }
+
+  /**
+   * 子节点列表的**统一访问方式**：叶子恒为空，容器覆盖为真实列表。
+   * 有了它，`Document` 遍历整棵树、判断"某 id 是否在某容器下"都不需要
+   * `instanceof` 或 `switch (kind)`。
+   */
+  get children(): readonly Shape[] {
+    return EMPTY_CHILDREN;
+  }
+
+  /**
+   * 是否包含自身或子孙（Composite 语义）。
+   * 叶子只能包含自己；容器覆盖为递归判断。
+   */
+  contains(shape: Shape): boolean {
+    return shape === this;
+  }
 
   /** 平移（增量）。容器会把位移递归到每个子孙。 */
   abstract move(dx: number, dy: number): void;
