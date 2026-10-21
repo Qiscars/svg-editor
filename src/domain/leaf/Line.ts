@@ -1,6 +1,6 @@
 import { Numbers } from '../Numbers.js';
 import { Shape } from '../Shape.js';
-import type { AttributeSpec } from '../Shape.js';
+import type { AttributeSpec, Point } from '../Shape.js';
 
 /** 线段 `<line>`：两个端点。 */
 export class Line extends Shape {
@@ -42,6 +42,11 @@ export class Line extends Shape {
     this.y1Value += dy;
     this.x2Value += dx;
     this.y2Value += dy;
+  }
+
+  /** 线段的代表点是起点。 */
+  override anchorPoint(): Point {
+    return { x: this.x1Value, y: this.y1Value };
   }
 
   scale(factor: number): void {

@@ -1,6 +1,6 @@
 import { Numbers } from '../Numbers.js';
 import { Shape } from '../Shape.js';
-import type { AttributeSpec } from '../Shape.js';
+import type { AttributeSpec, Point } from '../Shape.js';
 
 /** 矩形 `<rect>`：位置 + 宽高。 */
 export class Rect extends Shape {
@@ -40,6 +40,11 @@ export class Rect extends Shape {
   move(dx: number, dy: number): void {
     this.xValue += dx;
     this.yValue += dy;
+  }
+
+  /** 矩形的代表点是左上角。 */
+  override anchorPoint(): Point {
+    return { x: this.xValue, y: this.yValue };
   }
 
   scale(factor: number): void {

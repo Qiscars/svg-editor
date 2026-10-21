@@ -1,6 +1,6 @@
 import { Numbers } from '../Numbers.js';
 import { Shape } from '../Shape.js';
-import type { AttributeSpec } from '../Shape.js';
+import type { AttributeSpec, Point } from '../Shape.js';
 
 /**
  * 文字 `<text>`：插入点 + 文本内容。
@@ -41,6 +41,11 @@ export class TextShape extends Shape {
   move(dx: number, dy: number): void {
     this.xValue += dx;
     this.yValue += dy;
+  }
+
+  /** 文字的代表点是插入点。 */
+  override anchorPoint(): Point {
+    return { x: this.xValue, y: this.yValue };
   }
 
   scale(factor: number): void {

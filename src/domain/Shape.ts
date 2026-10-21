@@ -14,6 +14,14 @@ export interface AttributeSpec {
   readonly name: string;
   read(): string | undefined;
   write(raw: string): void;
+  /** 把属性恢复成"未设置"。几何属性恒有值，清理是空操作。 */
+  clear(): void;
+}
+
+/** 图形的代表点，用于 `move` 的反馈文本。容器没有代表点。 */
+export interface Point {
+  readonly x: number;
+  readonly y: number;
 }
 
 /** 叶子的子节点列表：共享一个冻结的空数组，避免每次访问都新建对象。 */
@@ -118,6 +126,23 @@ export abstract class Shape {
     spec.write(value);
   }
 
+  /**
+   * 把属性恢复成"未设置"。
+   * 撤销 `set r1 fill red` 时，如果原本没有 fill，必须真的去掉而不是设成空串。
+   */
+  unsetAttribute(name: string): void {
+    const spec = this.attributes().find((candidate) => candidate.name === name);
+    if (spec === undefined) {
+      throw ShapeError.unknownAttribute(name);
+    }
+    spec.clear();
+  }
+
+  /** 图形的代表点（矩形的左上角、圆的圆心……），容器返回 `null`。 */
+  anchorPoint(): Point | null {
+    return null;
+  }
+
   get fill(): string | undefined {
     return this.fillValue;
   }
@@ -164,6 +189,7 @@ export abstract class Shape {
     name: string,
     read: () => number | undefined,
     write: (value: number) => void,
+    clear: () => void = () => undefined,
   ): AttributeSpec {
     return {
       name,
@@ -174,6 +200,7 @@ export abstract class Shape {
       write: (raw) => {
         write(Numbers.parse(name, raw));
       },
+      clear,
     };
   }
 
@@ -182,6 +209,7 @@ export abstract class Shape {
     name: string,
     read: () => string | undefined,
     write: (value: string) => void,
+    clear: () => void = () => undefined,
   ): AttributeSpec {
     return {
       name,
@@ -189,6 +217,7 @@ export abstract class Shape {
       write: (raw) => {
         write(raw);
       },
+      clear,
     };
   }
 
@@ -209,6 +238,9 @@ export abstract class Shape {
         (value) => {
           this.fillValue = value;
         },
+        () => {
+          this.fillValue = undefined;
+        },
       ),
       this.stringSpec(
         'stroke',
@@ -216,12 +248,18 @@ export abstract class Shape {
         (value) => {
           this.strokeValue = value;
         },
+        () => {
+          this.strokeValue = undefined;
+        },
       ),
       this.numericSpec(
         'stroke-width',
         () => this.strokeWidthValue,
         (value) => {
           this.strokeWidthValue = value;
+        },
+        () => {
+          this.strokeWidthValue = undefined;
         },
       ),
     ];

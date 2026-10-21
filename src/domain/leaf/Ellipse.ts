@@ -1,6 +1,6 @@
 import { Numbers } from '../Numbers.js';
 import { Shape } from '../Shape.js';
-import type { AttributeSpec } from '../Shape.js';
+import type { AttributeSpec, Point } from '../Shape.js';
 
 /** 椭圆 `<ellipse>`：圆心 + 两个半径。 */
 export class Ellipse extends Shape {
@@ -40,6 +40,11 @@ export class Ellipse extends Shape {
   move(dx: number, dy: number): void {
     this.cxValue += dx;
     this.cyValue += dy;
+  }
+
+  /** 椭圆的代表点是圆心。 */
+  override anchorPoint(): Point {
+    return { x: this.cxValue, y: this.cyValue };
   }
 
   scale(factor: number): void {

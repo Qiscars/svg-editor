@@ -1,6 +1,6 @@
 import { Numbers } from '../Numbers.js';
 import { Shape } from '../Shape.js';
-import type { AttributeSpec } from '../Shape.js';
+import type { AttributeSpec, Point } from '../Shape.js';
 
 /** 圆 `<circle>`：圆心 + 半径。 */
 export class Circle extends Shape {
@@ -34,6 +34,11 @@ export class Circle extends Shape {
   move(dx: number, dy: number): void {
     this.cxValue += dx;
     this.cyValue += dy;
+  }
+
+  /** 圆的代表点是圆心。 */
+  override anchorPoint(): Point {
+    return { x: this.cxValue, y: this.cyValue };
   }
 
   scale(factor: number): void {
