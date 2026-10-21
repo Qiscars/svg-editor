@@ -42,6 +42,10 @@ export class ShapeError extends Error {
     return new ShapeError(`invalid id: ${id}`);
   }
 
+  static cannotInsertIntoSelf(id: string): ShapeError {
+    return new ShapeError(`cannot insert a container into itself: ${id}`);
+  }
+
   static scaleFactorNotPositive(): ShapeError {
     return new ShapeError('scale factor must be positive');
   }

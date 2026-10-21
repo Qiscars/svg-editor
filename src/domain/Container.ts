@@ -45,7 +45,7 @@ export class Container extends Shape {
    */
   insertChild(index: number, shape: Shape): void {
     if (shape === this) {
-      throw ShapeError.invalidId(`cannot add ${shape.describeRef()} into itself`);
+      throw ShapeError.cannotInsertIntoSelf(shape.id);
     }
     const currentParent = shape.parent;
     if (currentParent !== null) {
