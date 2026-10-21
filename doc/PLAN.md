@@ -19,11 +19,11 @@
 | 项 | 值 |
 |---|---|
 | 今天 | 2026-10-21 |
-| 当前阶段 | **Day 1 · 领域模型 + 命令层（进行中：domain 与命令基础设施已完成）** |
-| 已完成提交 | 11 / 32 |
-| 最近一次提交 | `a2ed4cf feat(commands): Command 接口、CommandContext 与 CommandHistory` |
-| 下一个提交 | #12 `feat(commands): create / delete`（Day 1 第 3 段，10/21 21:14） |
-| 本次前置检查 | `N = 10`，本段区间 `[10, 11]`，`10 ≤ N ≤ 11` → 无欠账，正常推进 |
+| 当前阶段 | **Day 1 · 已完成（domain + commands 两层跑通）** |
+| 已完成提交 | 17 / 32 |
+| 最近一次提交 | `5ba2bc1 test(commands): execute→undo 结构深比较` |
+| 下一个提交 | #18 `feat(io): ShapeFactory 与 SVG 序列化`（Day 2 第 1 段，10/22 14:09） |
+| 本次前置检查 | `N = 12`，本段区间 `[12, 17]`，`12 ≤ N ≤ 17` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
 | 距离截止 | 4 天（含 2 天缓冲） |
 
@@ -34,7 +34,7 @@
 | 天 | 日期 | 主题 | 提交区间 | 结束时的可验证成果 |
 |---|---|---|---|---|
 | Day 0 | 10/20 | 仓库与骨架 | #1–#5 ✅ | 远程仓库可用，`npm run cli` 能进 REPL 并输出 help，计划与看板就位 |
-| **Day 1** | **10/21** | **领域模型 + 命令层**（纯内存、零 I/O） | #6–#17 | `vitest run` 全绿；Composite 语义与 undo/redo 均在单测中被验证 |
+| **Day 1** | **10/21** | **领域模型 + 命令层**（纯内存、零 I/O） | #6–#17 ✅ | `vitest run` 全绿（91 个用例）；Composite 语义与 undo/redo 均在单测中被验证 |
 | **Day 2** | **10/22** | **持久化 + CLI 接入** | #18–#25 | `npm run cli` 回放作业 §6 transcript 输出一致；`save` 出的 SVG 浏览器可打开 |
 | **Day 3** | **10/23** | **质量保证 + 文档收口 + tag** | #26–#32 + tag | 命令覆盖 23/23、错误信息 11/11、依赖检查脚本 exit 0、文档四节写完、`final` 已推送 |
 | 缓冲 | 10/24–10/25 | 返工 / 补测试 / 打 tag 兜底 | — | — |
@@ -69,12 +69,12 @@
 | 9 | `feat(domain): Document 与结构不变量` | `Document.ts` | ✅ | `5399bff` |
 | 10 | `test(domain): 递归变换、属性白名单与 id 唯一性` | `tests/domain/*` | ✅ | `72ec73a` |
 | 11 | `feat(commands): Command 接口、CommandContext 与 CommandHistory` | `commands/*.ts` | ✅ | `a2ed4cf` |
-| 12 | `feat(commands): create / delete` | `commands/impl/*` | ⬜ | — |
-| 13 | `feat(commands): move / scale` | `commands/impl/*` | ⬜ | — |
-| 14 | `feat(commands): set（模板方法 + 白名单校验）` | `commands/impl/*` | ⬜ | — |
-| 15 | `feat(commands): group / ungroup / addto` | `commands/impl/*` | ⬜ | — |
-| 16 | `feat(commands): front / back 层级调整` | `commands/impl/*` | ⬜ | — |
-| 17 | `test(commands): execute→undo 结构深比较` | `tests/commands/*` | ⬜ | — |
+| 12 | `feat(commands): create / delete` | `commands/impl/*` | ✅ | `9a41990` |
+| 13 | `feat(commands): move / scale 与子树属性快照` | `commands/impl/*` | ✅ | `5ab2744` |
+| 14 | `feat(commands): set 属性修改与撤销` | `commands/impl/*` | ✅ | `5cfcdf9` |
+| 15 | `feat(commands): group / ungroup / addto` | `commands/impl/*` | ✅ | `28aaa5e` |
+| 16 | `feat(commands): front / back 层级调整` | `commands/impl/*` | ✅ | `2ac5cc5` |
+| 17 | `test(commands): execute→undo 结构深比较` | `tests/commands/*` | ✅ | `5ba2bc1` |
 
 **Day 1 验收标准（三条全过才算完成）**
 
@@ -174,6 +174,7 @@ node_modules/.bin/vitest run
 | 2 | 2026-10-20 | 制定 3 天开发计划，建立本进度看板 | #5 | 计划与看板落地 | 开始 Day 1 |
 | 3 | 2026-10-21 | **前置检查：`N = 6`，本段 `[6, 9]`，无欠账**。推进 `domain` 底座：抽象基类、叶子图形、Composite 容器与画布、Document 与 id 索引 | #6–#9 | 三条门禁全绿；冒烟脚本验证 move/scale 递归、id 唯一性、7 条错误文案、clone 深拷贝隔离、`show` 输出与作业 §5.2 一致 | 无欠账。留给 Day 1 第 2 段处理的发现见下 |
 | 4 | 2026-10-21 | **前置检查：`N = 10`，本段 `[10, 11]`，无欠账**。补 49 个领域用例；搭命令层基础设施（Command / CommandContext / CommandHistory / CommandError） | #10–#11 | 门禁全绿，累计 60 个用例通过；undo/redo 双栈与 IO 闸门四种场景均有覆盖 | 无欠账。具体命令待第 3 段 |
+| 5 | 2026-10-21 | **前置检查：`N = 12`，本段 `[12, 17]`，无欠账**。落地十条编辑命令与 undo 深比较测试 | #12–#17 | 累计 91 个用例全绿；**Day 1 三条验收全过**（tsc × 2 零错误、vitest 全绿、每条命令都有 execute→undo 深比较） | Day 1 收工，等 Day 2 |
 
 ### 5.1 本段发现与待办
 
@@ -184,6 +185,7 @@ node_modules/.bin/vitest run
 | 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | 待 #23 落地为"全局统一列 + 至少 1 空格"，并在 §2 过程记录写明这处取舍 |
 | 4 | 写领域测试时发现 `Container.insertChild` 自环抛的是 `invalid id`，语义不对 | **本段内已修**：新增 `ShapeError.cannotInsertIntoSelf`（`72ec73a`） |
 | 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | 待 #24「统一 error: 前缀」时收口成一个共同的基类，届时同步更新 §1.3 |
+| 6 | `set` 的非法数值是在 `execute()` 期才被拒绝，构造期只查白名单 | **刻意保留**：属性值的合法性由 `AttributeSpec.write` 唯一判断，命令层不重复实现解析。安全性由 `CommandHistory.run` 保证——execute 抛错就不入栈、不改状态（`5ba2bc1` 有用例覆盖） |
 
 ---
 
