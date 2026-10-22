@@ -188,6 +188,14 @@ node_modules/.bin/vitest run
 | 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | 待 #24「统一 error: 前缀」时收口成一个共同的基类，届时同步更新 §1.3 |
 | 6 | `set` 的非法数值是在 `execute()` 期才被拒绝，构造期只查白名单 | **刻意保留**：属性值的合法性由 `AttributeSpec.write` 唯一判断，命令层不重复实现解析。安全性由 `CommandHistory.run` 保证——execute 抛错就不入栈、不改状态（`5ba2bc1` 有用例覆盖） |
 
+### 5.2 待推送（网络阻塞，非代码问题）
+
+| 发现时间 | 现象 | 影响 | 恢复条件 |
+|---|---|---|---|
+| 2026-10-22 17:00 左右 | 本机代理 `127.0.0.1:12000` 未运行，系统代理也已关闭；直连 `github.com:443` 能建立 TCP 但 TLS 被重置（`Recv failure: Connection was reset`），`http.sslBackend=schannel` 也无效 | **本地 5 个提交（#18–#20 + 两条 docs(plan)）尚未推送到远程**；`origin/main` 仍停在 `7c6a53c` | 代理工具重新开启后执行 `git push` 即可，无需改任何代码 |
+
+**说明**：这些提交本身已经完成并通过全部门禁（tsc × 2 + 91 个用例），✅ 标记的是"工作完成"，不是"已同步到远程"。推送恢复后本节应改为"已推送"，并核对 `git log --oneline origin/main -1`。
+
 ---
 
 ## 6. 维护约定
