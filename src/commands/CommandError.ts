@@ -34,4 +34,16 @@ export class CommandError extends Error {
   static duplicateGroupMember(id: string): CommandError {
     return new CommandError(`duplicate id in group: ${id}`);
   }
+
+  static unknownCommand(name: string): CommandError {
+    return new CommandError(`unknown command: ${name}`);
+  }
+
+  static unclosedQuote(): CommandError {
+    return new CommandError('unclosed double quote');
+  }
+
+  static usage(usage: string): CommandError {
+    return new CommandError(`usage: ${usage}`);
+  }
 }
