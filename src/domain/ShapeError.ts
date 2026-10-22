@@ -30,6 +30,10 @@ export class ShapeError extends Error {
     return new ShapeError(`unknown shape type: ${type} (is the plugin loaded?)`);
   }
 
+  static missingParameter(name: string): ShapeError {
+    return new ShapeError(`missing parameter: ${name}`);
+  }
+
   static unknownAttribute(attribute: string): ShapeError {
     return new ShapeError(`unknown attribute: ${attribute}`);
   }

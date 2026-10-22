@@ -187,15 +187,22 @@ package "io（持久化层）" {
 - `ShapeFactory`：`type 名 → 构造函数`，供 `create` 与 `SvgParser` 共用；
 - `CommandRegistry`：`命令名 → 命令构造器 + 用法文本`，供分发与 `help` 共用。
 
-#### ④ 多态序列化 / 多态描述（替代 `switch(tag)`）
+#### ④ 多态属性表（替代 `switch(tag)`）
 
 `tree`、`show`、`save` 都需要"按图形类型做不同展示"，方案里**不写 `switch(tag)`**：
 
-- `Shape.toSvgElement()` 由子类实现 —— 序列化不集中在一处大 `switch`；
-- `Shape.describeInline()` / `Shape.describeDetail()` 由子类实现 —— `tree`/`show` 的
-  几何属性内联格式（`rect` 显示 `x= y= w= h=`，`circle` 显示 `cx= cy= r=`）自然分派；
-- 属性的 `set` 白名单同样由各类型声明（`settableAttributes()`），未知属性统一报
-  `error: unknown attribute: <attr>`。
+- 每个类型用 `geometryAttributes()` 声明自己的可写属性，`tree` / `show` / SVG 序列化
+  都遍历同一份声明（`Shape.describeInline()` / `describeDetailLines()`）——
+  `rect` 显示 `x= y= w= h=`，`circle` 显示 `cx= cy= r=`，由一个实现自然分派；
+- `set` 的白名单同样来自这份声明（`settableAttributes()`），未知属性统一报
+  `error: unknown attribute: <attr>`；
+- 序列化由 `io/SvgSerializer` **数据驱动**：读 `shape.attributes()` 逐条输出，
+  不做按类型分支。
+
+> **实现期修订（v1.2）**：本节最初写的是"`Shape.toSvgElement()` 由子类实现"。
+> 实现到 #18 时发现它与 §1.3「`domain` 不认识 XML」直接冲突——让子类产出 XML 元素，
+> 等于把 XML 概念塞进领域层。改为上面的"属性表 + 数据驱动的序列化器"后，
+> 领域层仍然零 XML 知识。差异已记入 §5 修订记录。
 
 #### ⑤ Template Method —— `set` 的统一校验流程
 
@@ -311,3 +318,4 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 |---|---|---|
 | v1 | `docs(architecture): 架构方案第一版` | 建立模块划分、依赖规则、变化点假设；一致性自查与质量保证留待实现后补全 |
 | v1.1 | `docs(plan): 三天开发计划与进度看板` | 新增 [`doc/PLAN.md`](PLAN.md)：把开发窗口压成 3 天（10/21–10/23，10/24–10/25 缓冲），逐提交列进度、每日验收标准与维护约定；本节（§2）指向该文档的原始流水 |
+| v1.2 | `feat(io): ShapeFactory 与 SVG 序列化` | **§1.2 ④ 修订**：原方案用 `Shape.toSvgElement()` 由子类实现序列化，与 §1.3「`domain` 不认识 XML」冲突；改为"各类型声明属性表 + `io/SvgSerializer` 数据驱动遍历"，领域层保持零 XML 知识。实现偏离方案的这一处按 §3.1 要求登记于此 |
