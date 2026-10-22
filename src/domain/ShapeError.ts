@@ -77,4 +77,8 @@ export class ShapeError extends Error {
   static cannotWriteFile(path: string): ShapeError {
     return new ShapeError(`cannot write file: ${path}`);
   }
+
+  static invalidSvg(detail: string): ShapeError {
+    return new ShapeError(`invalid SVG: ${detail}`);
+  }
 }
