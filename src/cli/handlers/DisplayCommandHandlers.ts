@@ -1,5 +1,7 @@
 import type { EditorApp } from '../../app/EditorApp.js';
 import type { CommandRegistry, CommandSpec } from '../../registry/CommandRegistry.js';
+import type { ShowRenderer } from '../render/ShowRenderer.js';
+import type { TreeRenderer } from '../render/TreeRenderer.js';
 
 /**
  * 显示类命令。它们不进入 undo 栈，也不改任何状态。
@@ -10,8 +12,32 @@ import type { CommandRegistry, CommandSpec } from '../../registry/CommandRegistr
  */
 export function displayCommandHandlers(
   registry: CommandRegistry<EditorApp>,
+  treeRenderer: TreeRenderer,
+  showRenderer: ShowRenderer,
 ): CommandSpec<EditorApp>[] {
   return [
+    {
+      name: 'tree',
+      usage: 'tree [id]',
+      summary: '显示结构树（默认整份文档，带 id 时只显示该子树）',
+      minArgs: 0,
+      maxArgs: 1,
+      run: (app, args) => treeRenderer.render(app.document, args[0]),
+    },
+    {
+      name: 'show',
+      usage: 'show <id>',
+      summary: '显示单个图形的属性明细',
+      minArgs: 1,
+      maxArgs: 1,
+      run: (app, args) => {
+        const id = args[0];
+        if (id === undefined) {
+          throw new Error('internal: argument 0 missing after arity check');
+        }
+        return showRenderer.render(app.document.require(id));
+      },
+    },
     {
       name: 'help',
       usage: 'help',

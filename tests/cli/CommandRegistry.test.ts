@@ -75,6 +75,8 @@ describe('默认命令表', () => {
         'back',
         'undo',
         'redo',
+        'tree',
+        'show',
         'help',
       ].sort(),
     );

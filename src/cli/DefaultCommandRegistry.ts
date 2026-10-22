@@ -1,4 +1,6 @@
 import type { EditorApp } from '../app/EditorApp.js';
+import { ShowRenderer } from './render/ShowRenderer.js';
+import { TreeRenderer } from './render/TreeRenderer.js';
 import { CommandRegistry } from '../registry/CommandRegistry.js';
 import { ShapeFactory } from '../registry/ShapeFactory.js';
 import { displayCommandHandlers } from './handlers/DisplayCommandHandlers.js';
@@ -25,7 +27,7 @@ export function createDefaultCommandRegistry(
     registry.register(spec);
   }
   // help 需要注册表本身，必须等其他命令注册完再注册它
-  for (const spec of displayCommandHandlers(registry)) {
+  for (const spec of displayCommandHandlers(registry, new TreeRenderer(), new ShowRenderer())) {
     registry.register(spec);
   }
   return registry;
