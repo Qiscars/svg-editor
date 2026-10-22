@@ -19,11 +19,11 @@
 | 项 | 值 |
 |---|---|
 | 今天 | 2026-10-21 |
-| 当前阶段 | **Day 2 · 进行中（io + app 已完成，CLI 未接入）** |
-| 已完成提交 | 20 / 32 |
-| 最近一次提交 | `e00c810 feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` |
-| 下一个提交 | #21 `feat(cli): Tokenizer 与 CommandParser`（Day 2 第 2 段，10/22 18:31） |
-| 本次前置检查 | `N = 18`，本段区间 `[18, 20]`，`18 ≤ N ≤ 20` → 无欠账，正常推进 |
+| 当前阶段 | **Day 2 · 进行中（CLI 已可用，只剩过程记录与验收）** |
+| 已完成提交 | 24 / 32 |
+| 最近一次提交 | `02eeef9 feat(cli): 统一 error: 前缀与成功摘要` |
+| 下一个提交 | #25 `docs(process): 追加 Day 1–2 过程记录`（Day 2 第 3 段，10/22 21:48） |
+| 本次前置检查 | `N = 21`，本段区间 `[21, 24]`，`21 ≤ N ≤ 24` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
 | 距离截止 | 4 天（含 2 天缓冲） |
 
@@ -36,7 +36,7 @@
 | Day 0 | 10/20 | 仓库与骨架 | #1–#5 ✅ | 远程仓库可用，`npm run cli` 能进 REPL 并输出 help，计划与看板就位 |
 | **Day 1** | **10/21** | **领域模型 + 命令层**（纯内存、零 I/O） | #6–#17 ✅ | `vitest run` 全绿（91 个用例）；Composite 语义与 undo/redo 均在单测中被验证 |
 | **Day 2** | **10/22** | **持久化 + CLI 接入** | #18–#25 | `npm run cli` 回放作业 §6 transcript 输出一致；`save` 出的 SVG 浏览器可打开 |
-| **Day 3** | **10/23** | **质量保证 + 文档收口 + tag** | #26–#32 + tag | 命令覆盖 23/23、错误信息 11/11、依赖检查脚本 exit 0、文档四节写完、`final` 已推送 |
+| **Day 3** | **10/23** | **质量保证 + 文档收口 + tag** | #26–#32 + tag | 命令覆盖 19/19、错误信息 11/11、依赖检查脚本 exit 0、文档四节写完、`final` 已推送 |
 | 缓冲 | 10/24–10/25 | 返工 / 补测试 / 打 tag 兜底 | — | — |
 
 **为什么这样切**：Day 1 全是纯内存逻辑，不碰文件系统，可以高频跑单测；Day 2 才引入 I/O 与字符串解析，问题域一次性变大但结构已稳；Day 3 专门用来"证明它对"，而不是继续加功能。**三天之外留两天缓冲**，是因为 tag `final` 必须在 10/25 23:59 前完成，不能压到最后一小时。
@@ -91,10 +91,10 @@
 | 18 | `feat(io): ShapeFactory 与 SVG 序列化` | `registry/ShapeFactory.ts` / `io/SvgSerializer.ts` | ✅ | `52344e2` |
 | 19 | `feat(io): SVG 解析、缺 id 自动补名与警告` | `io/SvgParser.ts` / `io/FileGateway.ts` | ✅ | `b643a44` |
 | 20 | `feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` | `app/EditorApp.ts` | ✅ | `e00c810` |
-| 21 | `feat(cli): Tokenizer 与 CommandParser（双引号、in 子句）` | `cli/Tokenizer.ts` / `cli/CommandParser.ts` | ⬜ | — |
-| 22 | `feat(cli): CommandRegistry 与 help 生成（消除待重构项 R3）` | `registry/CommandRegistry.ts` | ⬜ | — |
-| 23 | `feat(cli): tree / show 渲染器` | `cli/render/*` | ⬜ | — |
-| 24 | `feat(cli): 统一 error: 前缀与成功摘要` | `cli/Repl.ts` 收口 | ⬜ | — |
+| 21 | `feat(cli): Tokenizer 与 CommandParser（双引号、in 子句）` | `cli/Tokenizer.ts` / `cli/CommandParser.ts` | ✅ | `63acdf5` |
+| 22 | `feat(cli): CommandRegistry 与 help 生成（消除待重构项 R3）` | `registry/CommandRegistry.ts` | ✅ | `230c7be` |
+| 23 | `feat(cli): tree / show 渲染器` | `cli/render/*` | ✅ | `116db9f` |
+| 24 | `feat(cli): 统一 error: 前缀与成功摘要` | `cli/Repl.ts` 收口 | ✅ | `02eeef9` |
 | 25 | `docs(process): 追加 Day 1–2 过程记录` | `doc/README.md §2` | ⬜ | — |
 
 **Day 2 验收标准**
@@ -121,7 +121,7 @@
 
 **Day 3 验收标准（= 交付检查清单）**
 
-1. 命令覆盖矩阵 **23/23**（作业 §3 命令总表逐条有对应用例）；
+1. 命令覆盖矩阵 **19/19**（作业 §3 命令总表共 19 条命令，逐条有对应用例）；
 2. 错误信息 **11/11**（作业 §4.2 逐条有对应用例，且断言"失败不改状态"）；
 3. `node tools/check-layers.mjs` 退出码 0，输出真实贴进 `doc/README.md §3.2`；
 4. `doc/README.md` 四节全部有实质内容，无 `待填写` 残留；
@@ -175,7 +175,8 @@ node_modules/.bin/vitest run
 | 3 | 2026-10-21 | **前置检查：`N = 6`，本段 `[6, 9]`，无欠账**。推进 `domain` 底座：抽象基类、叶子图形、Composite 容器与画布、Document 与 id 索引 | #6–#9 | 三条门禁全绿；冒烟脚本验证 move/scale 递归、id 唯一性、7 条错误文案、clone 深拷贝隔离、`show` 输出与作业 §5.2 一致 | 无欠账。留给 Day 1 第 2 段处理的发现见下 |
 | 4 | 2026-10-21 | **前置检查：`N = 10`，本段 `[10, 11]`，无欠账**。补 49 个领域用例；搭命令层基础设施（Command / CommandContext / CommandHistory / CommandError） | #10–#11 | 门禁全绿，累计 60 个用例通过；undo/redo 双栈与 IO 闸门四种场景均有覆盖 | 无欠账。具体命令待第 3 段 |
 | 5 | 2026-10-21 | **前置检查：`N = 12`，本段 `[12, 17]`，无欠账**。落地十条编辑命令与 undo 深比较测试 | #12–#17 | 累计 91 个用例全绿；**Day 1 三条验收全过**（tsc × 2 零错误、vitest 全绿、每条命令都有 execute→undo 深比较） | Day 1 收工，等 Day 2 |
-| 6 | 2026-10-22 | **前置检查：`N = 18`，本段 `[18, 20]`，无欠账**（定时提醒因会话离线晚到约 2 小时）。落地 ShapeFactory + SVG 序列化、XML/SVG 解析与文件网关、EditorApp 编排 | #18–#20 | 序列化输出与作业 §0.1 样例逐字一致；用作业 §6 的 other.svg 实测 7 元素 + 1 条补名 warning；save→read 序列化稳定；累计 91 个用例仍全绿 | 无欠账。CLI 接入待第 2 段 |
+| 6 | 2026-10-22 | **前置检查：`N = 18`，本段 `[18, 20]`，无欠账**（定时提醒因会话离线晚到约 2 小时）。落地 ShapeFactory + SVG 序列化、XML/SVG 解析与文件网关、EditorApp 编排 | #18–#20 | 序列化输出与作业 §0.1 样例逐字一致；用作业 §6 的 other.svg 实测 7 元素 + 1 条补名 warning；save→read 序列化稳定 | 代理掉线导致推送延后，见 §5.2 |
+| 7 | 2026-10-22 | **前置检查：`N = 21`，本段 `[21, 24]`，无欠账**（代理恢复后先补推上段 5 个提交）。接入 CLI：分词与解析、命令注册表与 help 生成、tree/show 渲染、统一错误前缀 | #21–#24 | 作业 §6 会话序列与 §5.1 / §5.2 的 tree、show 输出逐行复现；累计 127 个用例全绿；待重构项 R3（静态 help 常量）已消除 | 无欠账。Day 2 只剩过程记录与验收 |
 
 ### 5.1 本段发现与待办
 
@@ -183,18 +184,20 @@ node_modules/.bin/vitest run
 |---|---|---|
 | 1 | `Document.attach` 在"移动归属"路径（图形已登记、换父容器）上会误报 `id already exists` | **本段内已修**：区分"首次挂载"与"移动归属"，后者只改父指针、不重复登记（`5399bff`） |
 | 2 | `doc/README.md §1.2 ④` 写的是 `Shape.toSvgElement()` 由子类实现，但那会让 `domain` 依赖 XML 概念，与 §1.3「domain 不认识 XML」直接冲突 | **已在 #18 修复**：改为"各类型声明属性表 + `io/SvgSerializer` 数据驱动遍历"；§1.2 已改写，§5 修订记录登记为 v1.2（`52344e2`） |
-| 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | 待 #23 落地为"全局统一列 + 至少 1 空格"，并在 §2 过程记录写明这处取舍 |
+| 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | **已在 #23 落地**：算法为"全局统一列 = 最宽（前缀 + id）+ 2，至少 1 空格"。与例 1 逐字一致；例 6.1 会宽 3 列。两例无法同时复现，取舍记入 `doc/README.md §2` 过程记录（`116db9f`） |
 | 4 | 写领域测试时发现 `Container.insertChild` 自环抛的是 `invalid id`，语义不对 | **本段内已修**：新增 `ShapeError.cannotInsertIntoSelf`（`72ec73a`） |
-| 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | 待 #24「统一 error: 前缀」时收口成一个共同的基类，届时同步更新 §1.3 |
+| 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | **已在 #24 收口**：新增 `domain/EditorError` 作为共同基类，两者改为继承它；Repl 只需判断一次 `instanceof EditorError`，非预期异常额外标 `internal:`（`02eeef9`） |
 | 6 | `set` 的非法数值是在 `execute()` 期才被拒绝，构造期只查白名单 | **刻意保留**：属性值的合法性由 `AttributeSpec.write` 唯一判断，命令层不重复实现解析。安全性由 `CommandHistory.run` 保证——execute 抛错就不入栈、不改状态（`5ba2bc1` 有用例覆盖） |
+| 7 | **计划里的命令条数算错了**：原写"23 条命令"，实际作业 §3 共 17 行、合计 **19 条命令**（front/back、undo/redo 各占一行但含两条） | **已在本段修正**：§1 总览与 Day 3 验收标准的"23/23"改为"19/19"，Day 3 的覆盖矩阵按 19 条对账。这也说明验收标准要拿命令总表逐行数，而不是凭印象 |
 
 ### 5.2 待推送（网络阻塞，非代码问题）
 
 | 发现时间 | 现象 | 影响 | 恢复条件 |
 |---|---|---|---|
-| 2026-10-22 17:00 左右 | 本机代理 `127.0.0.1:12000` 未运行，系统代理也已关闭；直连 `github.com:443` 能建立 TCP 但 TLS 被重置（`Recv failure: Connection was reset`），`http.sslBackend=schannel` 也无效 | **本地 5 个提交（#18–#20 + 两条 docs(plan)）尚未推送到远程**；`origin/main` 仍停在 `7c6a53c` | 代理工具重新开启后执行 `git push` 即可，无需改任何代码 |
+| 2026-10-22 17:00 左右 | 本机代理 `127.0.0.1:12000` 未运行，系统代理也已关闭；直连 `github.com:443` 能建立 TCP 但 TLS 被重置（`Recv failure: Connection was reset`），`http.sslBackend=schannel` 也无效 | 当时 5 个提交未能推送 | — |
+| 2026-10-22 18:31 | 代理恢复，`git push` 一次成功：`7c6a53c..6ffb9fc` | **已解除**，远程与本地一致 | 无需操作 |
 
-**说明**：这些提交本身已经完成并通过全部门禁（tsc × 2 + 91 个用例），✅ 标记的是"工作完成"，不是"已同步到远程"。推送恢复后本节应改为"已推送"，并核对 `git log --oneline origin/main -1`。
+**结论**：代码从未受影响，只是远程同步晚了约 1.5 小时。已核对 `git log --oneline origin/main -1`。
 
 ---
 
