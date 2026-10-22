@@ -2,8 +2,11 @@ import { createInterface } from 'node:readline';
 import type { Interface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 
+import { EditorApp } from '../app/EditorApp.js';
+import type { CommandRegistry } from '../registry/CommandRegistry.js';
+import { CommandParser } from './CommandParser.js';
 import { ConsoleOutput } from './ConsoleOutput.js';
-import { HELP_TEXT } from './HelpText.js';
+import { createDefaultCommandRegistry } from './DefaultCommandRegistry.js';
 
 export const PROMPT = 'svg> ';
 export const BANNER = "svg-editor 0.1 — type 'help' for commands";
@@ -12,10 +15,12 @@ export const BANNER = "svg-editor 0.1 — type 'help' for commands";
 type MaybeTty<T> = T & { isTTY?: boolean | undefined };
 
 /**
- * REPL：逐行读入 → 交给命令层执行 → 打印结果。
+ * REPL：逐行读入 → 解析 → 分发 → 打印。
  *
- * 它只负责**行级 I/O 与生命周期**，不认识任何具体命令；命令的解析与执行在后续
- * 迭代中交给 CommandParser + CommandRegistry（见 doc/README.md §1.1）。
+ * 它只负责**行级 I/O 与生命周期**，不认识任何具体命令：命令表来自
+ * `CommandRegistry`，执行体最终落到 `EditorApp` / 命令层。
+ * 早期那份静态 `HelpText` 常量已删除——帮助文本改由注册表汇总生成，
+ * 待重构项 R3 就此消除。
  *
  * 两种输入模式：
  * - 交互模式（stdin/stdout 都是终端）：readline 负责行编辑与回显，提示符由 `rl.prompt()` 打印；
@@ -26,9 +31,19 @@ export class Repl {
   private readonly out: ConsoleOutput;
   private readonly rl: Interface;
   private readonly interactive: boolean;
+  private readonly app: EditorApp;
+  private readonly registry: CommandRegistry<EditorApp>;
+  private readonly parser = new CommandParser();
 
-  constructor(input: MaybeTty<Readable>, output: MaybeTty<Writable>) {
+  constructor(
+    input: MaybeTty<Readable>,
+    output: MaybeTty<Writable>,
+    app: EditorApp = new EditorApp(),
+    registry: CommandRegistry<EditorApp> = createDefaultCommandRegistry(),
+  ) {
     this.out = new ConsoleOutput(output);
+    this.app = app;
+    this.registry = registry;
     this.interactive = input.isTTY === true && output.isTTY === true;
     this.rl = createInterface({
       input,
@@ -57,26 +72,20 @@ export class Repl {
   }
 
   private execute(rawLine: string): void {
-    const line = rawLine.trim();
-
-    // 空行与 `#` 开头的注释：便于把命令序列存成脚本回放
-    if (line === '' || line.startsWith('#')) {
-      return;
-    }
-
-    if (line === 'help') {
-      for (const helpLine of HELP_TEXT) {
-        this.out.line(helpLine);
+    try {
+      const invocation = this.parser.parse(rawLine);
+      if (invocation === null) {
+        return;
       }
-      return;
+      for (const line of this.registry.execute(this.app, invocation.name, invocation.args)) {
+        this.out.line(line);
+      }
+    } catch (error) {
+      this.out.line(`error: ${describeError(error)}`);
     }
-
-    // 过渡实现：分发逻辑在 CommandRegistry 落地时替换
-    this.out.line(`error: unknown command: ${firstToken(line)}`);
   }
 }
 
-function firstToken(line: string): string {
-  const index = line.indexOf(' ');
-  return index === -1 ? line : line.slice(0, index);
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

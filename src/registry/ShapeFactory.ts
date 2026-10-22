@@ -20,6 +20,8 @@ import { ShapeError } from '../domain/ShapeError.js';
 export interface ShapeDefinition {
   readonly kind: string;
   readonly parameters: readonly string[];
+  /** `create` 里几何参数之后还可选跟一个样式值，例如 rect 的 fill、line 的 stroke。 */
+  readonly optionalStyle?: string;
   build(id: string, values: readonly string[]): Shape;
 }
 
@@ -39,24 +41,28 @@ export class ShapeFactory {
     factory.register({
       kind: 'rect',
       parameters: ['x', 'y', 'width', 'height'],
+      optionalStyle: 'fill',
       build: (id, values) =>
         new Rect(id, number(values, 0, 'x'), number(values, 1, 'y'), number(values, 2, 'width'), number(values, 3, 'height')),
     });
     factory.register({
       kind: 'circle',
       parameters: ['cx', 'cy', 'r'],
+      optionalStyle: 'fill',
       build: (id, values) =>
         new Circle(id, number(values, 0, 'cx'), number(values, 1, 'cy'), number(values, 2, 'r')),
     });
     factory.register({
       kind: 'ellipse',
       parameters: ['cx', 'cy', 'rx', 'ry'],
+      optionalStyle: 'fill',
       build: (id, values) =>
         new Ellipse(id, number(values, 0, 'cx'), number(values, 1, 'cy'), number(values, 2, 'rx'), number(values, 3, 'ry')),
     });
     factory.register({
       kind: 'line',
       parameters: ['x1', 'y1', 'x2', 'y2'],
+      optionalStyle: 'stroke',
       build: (id, values) =>
         new Line(id, number(values, 0, 'x1'), number(values, 1, 'y1'), number(values, 2, 'x2'), number(values, 3, 'y2')),
     });
@@ -118,3 +124,4 @@ function text(values: readonly string[], index: number, name: string): string {
   }
   return raw;
 }
+
