@@ -19,11 +19,11 @@
 | 项 | 值 |
 |---|---|
 | 今天 | 2026-10-21 |
-| 当前阶段 | **Day 1 · 已完成（domain + commands 两层跑通）** |
-| 已完成提交 | 17 / 32 |
-| 最近一次提交 | `5ba2bc1 test(commands): execute→undo 结构深比较` |
-| 下一个提交 | #18 `feat(io): ShapeFactory 与 SVG 序列化`（Day 2 第 1 段，10/22 14:09） |
-| 本次前置检查 | `N = 12`，本段区间 `[12, 17]`，`12 ≤ N ≤ 17` → 无欠账，正常推进 |
+| 当前阶段 | **Day 2 · 进行中（io + app 已完成，CLI 未接入）** |
+| 已完成提交 | 20 / 32 |
+| 最近一次提交 | `e00c810 feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` |
+| 下一个提交 | #21 `feat(cli): Tokenizer 与 CommandParser`（Day 2 第 2 段，10/22 18:31） |
+| 本次前置检查 | `N = 18`，本段区间 `[18, 20]`，`18 ≤ N ≤ 20` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
 | 距离截止 | 4 天（含 2 天缓冲） |
 
@@ -88,9 +88,9 @@
 
 | # | 提交 | 产出 | 状态 | sha |
 |---|---|---|---|---|
-| 18 | `feat(io): ShapeFactory 与 SVG 序列化` | `registry/ShapeFactory.ts` / `io/SvgSerializer.ts` | ⬜ | — |
-| 19 | `feat(io): SVG 解析、缺 id 自动补名与警告` | `io/SvgParser.ts` / `io/FileGateway.ts` | ⬜ | — |
-| 20 | `feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` | `app/EditorApp.ts` | ⬜ | — |
+| 18 | `feat(io): ShapeFactory 与 SVG 序列化` | `registry/ShapeFactory.ts` / `io/SvgSerializer.ts` | ✅ | `52344e2` |
+| 19 | `feat(io): SVG 解析、缺 id 自动补名与警告` | `io/SvgParser.ts` / `io/FileGateway.ts` | ✅ | `b643a44` |
+| 20 | `feat(app): EditorApp 编排 init/read/save/canvas 与 IO 闸门` | `app/EditorApp.ts` | ✅ | `e00c810` |
 | 21 | `feat(cli): Tokenizer 与 CommandParser（双引号、in 子句）` | `cli/Tokenizer.ts` / `cli/CommandParser.ts` | ⬜ | — |
 | 22 | `feat(cli): CommandRegistry 与 help 生成（消除待重构项 R3）` | `registry/CommandRegistry.ts` | ⬜ | — |
 | 23 | `feat(cli): tree / show 渲染器` | `cli/render/*` | ⬜ | — |
@@ -175,13 +175,14 @@ node_modules/.bin/vitest run
 | 3 | 2026-10-21 | **前置检查：`N = 6`，本段 `[6, 9]`，无欠账**。推进 `domain` 底座：抽象基类、叶子图形、Composite 容器与画布、Document 与 id 索引 | #6–#9 | 三条门禁全绿；冒烟脚本验证 move/scale 递归、id 唯一性、7 条错误文案、clone 深拷贝隔离、`show` 输出与作业 §5.2 一致 | 无欠账。留给 Day 1 第 2 段处理的发现见下 |
 | 4 | 2026-10-21 | **前置检查：`N = 10`，本段 `[10, 11]`，无欠账**。补 49 个领域用例；搭命令层基础设施（Command / CommandContext / CommandHistory / CommandError） | #10–#11 | 门禁全绿，累计 60 个用例通过；undo/redo 双栈与 IO 闸门四种场景均有覆盖 | 无欠账。具体命令待第 3 段 |
 | 5 | 2026-10-21 | **前置检查：`N = 12`，本段 `[12, 17]`，无欠账**。落地十条编辑命令与 undo 深比较测试 | #12–#17 | 累计 91 个用例全绿；**Day 1 三条验收全过**（tsc × 2 零错误、vitest 全绿、每条命令都有 execute→undo 深比较） | Day 1 收工，等 Day 2 |
+| 6 | 2026-10-22 | **前置检查：`N = 18`，本段 `[18, 20]`，无欠账**（定时提醒因会话离线晚到约 2 小时）。落地 ShapeFactory + SVG 序列化、XML/SVG 解析与文件网关、EditorApp 编排 | #18–#20 | 序列化输出与作业 §0.1 样例逐字一致；用作业 §6 的 other.svg 实测 7 元素 + 1 条补名 warning；save→read 序列化稳定；累计 91 个用例仍全绿 | 无欠账。CLI 接入待第 2 段 |
 
 ### 5.1 本段发现与待办
 
 | # | 发现 | 处理 |
 |---|---|---|
 | 1 | `Document.attach` 在"移动归属"路径（图形已登记、换父容器）上会误报 `id already exists` | **本段内已修**：区分"首次挂载"与"移动归属"，后者只改父指针、不重复登记（`5399bff`） |
-| 2 | `doc/README.md §1.2 ④` 写的是 `Shape.toSvgElement()` 由子类实现，但那会让 `domain` 依赖 XML 概念，与 §1.3「domain 不认识 XML」直接冲突 | 待 #18 实现 io 时改为"序列化器遍历 `attributes()` 数据驱动"，同一提交内更新 §1.2 与 §5 修订记录 |
+| 2 | `doc/README.md §1.2 ④` 写的是 `Shape.toSvgElement()` 由子类实现，但那会让 `domain` 依赖 XML 概念，与 §1.3「domain 不认识 XML」直接冲突 | **已在 #18 修复**：改为"各类型声明属性表 + `io/SvgSerializer` 数据驱动遍历"；§1.2 已改写，§5 修订记录登记为 v1.2（`52344e2`） |
 | 3 | 作业 §5.1 的 `tree` 示例自相矛盾：同一深度的属性列，例 1 对齐到第 19 列、例 6.1 对齐到第 29 列，按同一算法推不出来 | 待 #23 落地为"全局统一列 + 至少 1 空格"，并在 §2 过程记录写明这处取舍 |
 | 4 | 写领域测试时发现 `Container.insertChild` 自环抛的是 `invalid id`，语义不对 | **本段内已修**：新增 `ShapeError.cannotInsertIntoSelf`（`72ec73a`） |
 | 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | 待 #24「统一 error: 前缀」时收口成一个共同的基类，届时同步更新 §1.3 |
