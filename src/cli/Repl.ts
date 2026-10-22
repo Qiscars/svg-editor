@@ -3,6 +3,7 @@ import type { Interface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 
 import { EditorApp } from '../app/EditorApp.js';
+import { EditorError } from '../domain/EditorError.js';
 import type { CommandRegistry } from '../registry/CommandRegistry.js';
 import { CommandParser } from './CommandParser.js';
 import { ConsoleOutput } from './ConsoleOutput.js';
@@ -81,11 +82,22 @@ export class Repl {
         this.out.line(line);
       }
     } catch (error) {
-      this.out.line(`error: ${describeError(error)}`);
+      this.out.line(formatError(error));
     }
   }
 }
 
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+/**
+ * 统一错误行：一行一条，前缀 `error: `（作业 §2）。
+ *
+ * `EditorError` 是预期内的用户错误，直接输出消息；
+ * 其它异常说明我们自己写错了，额外加 `internal:`，
+ * 免得把 bug 伪装成"用户操作不当"。
+ */
+function formatError(error: unknown): string {
+  if (error instanceof EditorError) {
+    return `error: ${error.message}`;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return `error: internal: ${message}`;
 }

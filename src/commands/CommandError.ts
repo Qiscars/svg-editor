@@ -1,14 +1,14 @@
+import { EditorError } from '../domain/EditorError.js';
+
 /**
- * 命令层的错误。
+ * 命令层的错误：这个操作现在不能做（闸门未解禁、栈空、未知命令、参数个数不对）。
  *
- * 与 `ShapeError` 分开：`ShapeError` 描述"图形树不成立"，
- * `CommandError` 描述"这个操作现在不能做"（闸门、栈空）。
- * 两者都由表现层统一加 `error: ` 前缀输出。
+ * 与 `ShapeError` 是兄弟关系，二者共同继承 `EditorError`——
+ * 表现层只需要判断一次 `instanceof EditorError` 就能决定"这是给用户看的错误"。
  */
-export class CommandError extends Error {
+export class CommandError extends EditorError {
   constructor(message: string) {
     super(message);
-    this.name = 'CommandError';
   }
 
   static undoNotAllowedAfterIo(): CommandError {

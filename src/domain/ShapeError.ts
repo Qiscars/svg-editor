@@ -1,13 +1,14 @@
+import { EditorError } from './EditorError.js';
+
 /**
- * 领域错误。
+ * 领域错误：图形树本身不成立（id 冲突、形状不存在、属性非法……）。
  *
  * 约定：`message` 是**不带 `error: ` 前缀**的正文，前缀由表现层统一添加，
  * 这样领域层不关心"怎么显示错误"。消息文本与作业 §4.2 的错误信息表一一对应。
  */
-export class ShapeError extends Error {
+export class ShapeError extends EditorError {
   constructor(message: string) {
     super(message);
-    this.name = 'ShapeError';
   }
 
   static idAlreadyExists(id: string): ShapeError {
