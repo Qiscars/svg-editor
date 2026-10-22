@@ -81,4 +81,8 @@ export class ShapeError extends Error {
   static invalidSvg(detail: string): ShapeError {
     return new ShapeError(`invalid SVG: ${detail}`);
   }
+
+  static noSavePath(): ShapeError {
+    return new ShapeError('no file to save to; give a path');
+  }
 }
