@@ -1,0 +1,35 @@
+# 作业 §6 的典型会话，逐条原样保存，便于回放与对拍
+#
+# 回放方式（必须在一个只有 other.svg 的空目录里跑，这样 transcript 里的
+# 裸文件名才能对上；仓库根目录会污染出 demo.svg）：
+#
+#   mkdir /tmp/svg-run && cp doc/scenarios/other.svg /tmp/svg-run/
+#   cd /tmp/svg-run && node <repo>/dist/main.js < <repo>/doc/scenarios/basic-session.txt
+#
+# 本文件的回放输出见同目录的 basic-session.golden.txt。
+
+init 800 600
+create rect bg 0 0 800 600 #ffffff
+create text title 20 40 "My Diagram"
+create circle c1 100 100 20 red
+create rect box 200 80 60 60 #3366ff
+
+group markers c1 box
+tree
+
+move c1 30 0
+undo
+redo
+
+set title text "My Diagram v2"
+undo
+
+group bad c1 markers
+delete box
+undo
+
+save demo.svg
+undo
+
+read other.svg
+tree

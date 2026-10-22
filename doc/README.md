@@ -277,7 +277,111 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 - **讨论点：构建产物要不要入库？**
   决定：不入库（`.gitignore` 忽略 `dist/`、`node_modules/`），工程用 `npm run cli`
   一条命令完成"编译 + 启动"，保证 clone 下来即可复现。
-- **待续**：实现阶段的讨论记录（发现的问题、被否掉的方案）在后续迭代中追加。
+- **待续**：实现阶段的讨论记录（发现的问题、被否掉的方案）见下文。
+
+### 2.2 阶段 1：领域模型与命令层（10/21）
+
+本节记录的都是**真的发生过**的问题：AI 先给方案 → 写下去撞墙 → 确认原因 → 改。
+
+#### ① 撤销用属性快照，而不是"反向操作"
+
+最初的想法很自然：`move` 的逆是 `move(-dx, -dy)`，`scale(f)` 的逆是 `scale(1/f)`。
+动手写测试时立刻遇到两个反例：
+
+- `0.1 + 0.2 - 0.2 !== 0.1`（浮点加减不保值）；
+- `scale(3)` 之后 `scale(1/3)` 回不到原坐标。
+
+改成 `ShapeSnapshot`：记录受影响子树每个属性的**字符串原值**，恢复时逐字写回。
+用例 `scale(3) 撤销后回到精确原值，而不是 99.99999` 钉住了这条。
+
+同时**否决了"整文档快照"**这个更省事的选择：撤销栈每层存整棵树，深度一上去内存就爆。
+因为 `move` / `scale` 不改结构，只记受影响子树的属性就已经完备。
+
+#### ② `Document.attach` 在"移动归属"路径上误报 id 冲突
+
+`group` / `addto` 需要把**已登记**的图形换一个父容器。第一版 `attach` 无条件调用
+`registerTree`，于是 `doc.attach(markers, c1)` 直接抛 `id already exists: c1`。
+
+修正为区分两种情况：首次挂载才登记子树，"移动归属"只改父指针。
+这个问题是跑冒烟脚本撞出来的，不是读代码看出来的——说明只靠类型检查和单元测试还不够，
+得有端到端跑一遍的习惯。
+
+#### ③ 测试推翻了实现假设，也推翻了我的测试假设
+
+我原以为 `set c1 r abc` 应该在**构造命令时**就报错，于是断言写成了构造期抛错。
+实际是在 `execute()` 期抛的。第一反应是"实现错了"，核对后确认这是对的：
+
+- 属性值是否合法，只有 `AttributeSpec.write` 有资格判断，命令层重复实现解析会立刻出现两份真相；
+- 安全性由 `CommandHistory.run` 的结构保证——`execute()` 抛错就不入栈、也不会有半成品状态。
+
+于是改的是**测试**而不是实现，断言变成「`run` 抛错 + 撤销栈深度仍为 0 + 状态未变」。
+这比原来的断言更准确地验证了那条不变量。
+
+#### ④ 错误语义的自我纠正
+
+`Container.insertChild` 拒绝自环时抛的是 `invalid id: cannot add g#g1 into itself`，
+模板套错了（`invalid id` 是给非法 id 用的）。新增 `ShapeError.cannotInsertIntoSelf`，
+消息改为 `cannot insert a container into itself: g1`。
+
+### 2.3 阶段 2：持久化与 CLI（10/22）
+
+#### ① 方案与依赖规则打架：`toSvgElement`
+
+原架构方案 §1.2 ④ 写的是"`Shape.toSvgElement()` 由子类实现，序列化不集中在一处大 `switch`"。
+写到 io 层时发现它和 §1.3 的「`domain` 不认识 XML」**直接冲突**——让领域对象产出 XML 元素，
+等于把 XML 概念塞进领域层。三个可选方案：
+
+| 方案 | 问题 |
+|---|---|
+| A. 保持原方案，在 `domain` 里定义 `SvgElement` 模型 | `domain` 依赖 XML 概念，违反 §1.3 |
+| B. 序列化器里写 `switch (shape.kind)` | 正好踩中作业禁止的"到处 `switch(tag)`" |
+| C. 各类型声明属性表，序列化器数据驱动遍历 | 无分支，`domain` 仍零 XML 知识 |
+
+选 C。改动不大，但它**同时改了三处**：§1.2 正文、§5 修订记录 v1.2、`doc/PLAN.md §5.1` 的待办状态。
+这正是"一致性自查"要的东西：方案偏离就留痕，而不是事后当没发生过。
+
+#### ② `tree` 的属性列宽：作业给的两个示例互相矛盾
+
+用**同一套算法**推不出两个示例：§5.1 例 1 的属性列在第 19 列，§6.1 的例子在第 29 列。
+
+实现取"**列宽 = 最宽（前缀 + id）+ 2，且至少 1 个空格**"。实测结果：
+
+- §5.1 例 1 —— **逐字一致**；
+- §6 transcript 里 `read other.svg` 之后的树 —— **逐字一致**（也是 19 列）；
+- §6.1 流程图 —— 内容完全一致，但整体宽 3 列。
+
+三个示例里两个逐字复现，第三个是格式差异而非语义差异，故按格式差异处理并把取舍写在这里。
+（另外 §6 的树里 `ellipse#e1 … y=2` 是笔误：SVG 椭圆没有 `y`，实际属性是 `cy`，
+本实现输出 `cy=2`。）
+
+#### ③ 待重构项 R3 是"顺手"消除的
+
+`help` 最初是一份静态常量 `src/cli/HelpText.ts`，加一条命令要改两处（实现 + 帮助文本），
+在方案里被登记为待重构项 R3。做成 `CommandRegistry` 后，命令的 `usage` / `summary` 就写在
+命令自己的声明里，`help` 直接汇总——**加一条命令只改一个地方**。
+`tests/cli/CommandRegistry.test.ts` 里有一个用例专门验证这点："注册一条新命令后 help 自动包含它"。
+
+#### ④ 我算错了命令条数
+
+计划里一直写"命令覆盖 23/23"。真正逐行数作业 §3 的命令总表：共 17 行，
+其中 `front / back` 与 `undo / redo` 各占一行但含两条命令，合计 **19 条**。
+已在总览、Day 3 验收标准、`PLAN.md §5.1` 三处修正。教训：验收标准要拿总表逐行数，不能凭印象估。
+
+#### ⑤ 一次与代码无关的阻塞
+
+10/22 下午本机代理未运行，直连 `github.com:443` 能建立 TCP 但 TLS 被重置
+（`Recv failure: Connection was reset`，换成 Schannel 后端也无效），导致 5 个提交滞留在本地。
+处理方式是把阻塞**写进 `PLAN.md §5.2`**（含现象、影响、恢复条件），而不是让看板显示"一切正常"；
+代理恢复后一次 `git push` 解决，再把该节改为"已解除"。
+
+### 2.4 Day 2 端到端验收结果
+
+| # | 验收项 | 结果 | 证据与说明 |
+|---|---|---|---|
+| 1 | 作业 §6 会话回放与 transcript 逐行一致 | ✅ 通过 | 场景脚本 `doc/scenarios/basic-session.txt`，回放输出见 `basic-session.golden.txt`（69 行）。`canvas 800x600 created`、`saved to demo.svg (5 elements)`、`error: undo not allowed after io command`、`warning: assigned id rect1 to unnamed <rect>`、`read other.svg (7 elements)` 全部逐字一致；仅 §6 原文的 `ellipse … y=2` 按 SVG 规范输出为 `cy=2`（原文笔误） |
+| 2 | 作业 §6.1 两节点流程图 | ✅ 通过 | `doc/scenarios/flowchart-session.txt`；8 个元素、层级与作业一致；`move node2 0 100` 后 `g#node2 moved by (0,100)`、`undo` 后 `moved back by (0,-100)`；树的内容一致，属性列宽差 3 列（格式差异，见 §2.3 ②） |
+| 3 | `save` 出的 SVG 在浏览器正确渲染 | ✅ 通过 | 用无头 Edge 打开 `demo.svg` 与 `flowchart.svg` 截图：`doc/images/demo-render.png`、`doc/images/flowchart-render.png`。可见白底、红色圆（已移动到 130,100）、蓝色方块、文字，以及流程图的连线与中文标题 |
+| 4 | 文档类命令后 `undo` 被拒 | ✅ 通过 | `save demo.svg` 之后 `undo` 输出 `error: undo not allowed after io command`；`init` / `read` 走 `CommandHistory.reset()`（连栈一起作废），`save` / `canvas` 走 `markIoBoundary()`（栈保留、只上闸门） |
 
 ---
 
@@ -319,3 +423,4 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 | v1 | `docs(architecture): 架构方案第一版` | 建立模块划分、依赖规则、变化点假设；一致性自查与质量保证留待实现后补全 |
 | v1.1 | `docs(plan): 三天开发计划与进度看板` | 新增 [`doc/PLAN.md`](PLAN.md)：把开发窗口压成 3 天（10/21–10/23，10/24–10/25 缓冲），逐提交列进度、每日验收标准与维护约定；本节（§2）指向该文档的原始流水 |
 | v1.2 | `feat(io): ShapeFactory 与 SVG 序列化` | **§1.2 ④ 修订**：原方案用 `Shape.toSvgElement()` 由子类实现序列化，与 §1.3「`domain` 不认识 XML」冲突；改为"各类型声明属性表 + `io/SvgSerializer` 数据驱动遍历"，领域层保持零 XML 知识。实现偏离方案的这一处按 §3.1 要求登记于此 |
+| v1.3 | `docs(process): 追加 Day 1–2 过程记录` | **§2 成文**：补 2.2 / 2.3 / 2.4 三节，记录领域层与 io 层的真实返工（撤销快照、attach 误报、set 校验时机、`toSvgElement` 冲突、tree 列宽矛盾、命令条数算错）以及 Day 2 四条端到端验收结果；新增 `doc/scenarios/`（可回放场景 + golden 输出）与 `doc/images/`（渲染截图） |
