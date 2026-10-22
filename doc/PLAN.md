@@ -197,8 +197,11 @@ node_modules/.bin/vitest run
 |---|---|---|---|
 | 2026-10-22 17:00 左右 | 本机代理 `127.0.0.1:12000` 未运行，系统代理也已关闭；直连 `github.com:443` 能建立 TCP 但 TLS 被重置（`Recv failure: Connection was reset`），`http.sslBackend=schannel` 也无效 | 当时 5 个提交未能推送 | — |
 | 2026-10-22 18:31 | 代理恢复，`git push` 一次成功：`7c6a53c..6ffb9fc` | **已解除**，远程与本地一致 | 无需操作 |
+| 2026-10-22 21:55 | Day 2 收工时代理**再次**掉线（端口 12000 不在监听），`git push` 失败；本地 ahead 2 | #25 与 Day 2 验收记录共 2 个提交暂未同步；`origin/main` 停在 `1023475` | Day 3 开工时先执行 `git push`，一条命令即可 |
 
-**结论**：代码从未受影响，只是远程同步晚了约 1.5 小时。已核对 `git log --oneline origin/main -1`。
+**结论**：代码与文档从未受影响，只是远程同步滞后。**每次开工的第一动作都是先补推**，
+所以这个阻塞不会把风险传导到后续会话。核对方式：`git status -sb` 看 ahead 数，
+`git log --oneline origin/main -1` 看远程实际位置。
 
 ---
 
