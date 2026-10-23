@@ -20,7 +20,9 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.test.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:layers": "node tools/check-layers.mjs",
+    "verify": "npm run build && npm run typecheck && npm test && npm run check:layers"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

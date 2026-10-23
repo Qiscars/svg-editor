@@ -1,0 +1,33 @@
+﻿node.exe : 依赖方向检查失败：12 处违规（app:1  cli:12  commands:15  domain:13  io:5  entry:1  registry:2）
+所在位置 行:7 字符: 1
++ & "$nd\bin\node.exe" tools/check-layers.mjs 2>&1 | Out-File -FilePath ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (依赖方向检查失败：12 处违规...:1  registry:2）:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  src/cli/handlers/DocumentCommandHandlers.ts:2  cli 不允许依赖 commands
+      ../../commands/CommandError.js
+  src/cli/handlers/EditCommandHandlers.ts:2  cli 不允许依赖 commands
+      ../../commands/CommandError.js
+  src/cli/handlers/EditCommandHandlers.ts:3  cli 不允许依赖 commands
+      ../../commands/impl/AddToCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:4  cli 不允许依赖 commands
+      ../../commands/impl/CreateShapeCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:5  cli 不允许依赖 commands
+      ../../commands/impl/DeleteShapeCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:6  cli 不允许依赖 commands
+      ../../commands/impl/GroupCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:7  cli 不允许依赖 commands
+      ../../commands/impl/MoveShapeCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:8  cli 不允许依赖 commands
+      ../../commands/impl/ReorderCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:9  cli 不允许依赖 commands
+      ../../commands/impl/ScaleShapeCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:10  cli 不允许依赖 commands
+      ../../commands/impl/SetAttributeCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:11  cli 不允许依赖 commands
+      ../../commands/impl/UngroupCommand.js
+  src/cli/Tokenizer.ts:1  cli 不允许依赖 commands
+      ../commands/CommandError.js
+
+规则见 doc/README.md §1.3。违反即为待处理项，要么改代码，要么改规则并留痕。
