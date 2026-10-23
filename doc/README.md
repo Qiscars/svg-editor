@@ -408,11 +408,63 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 |---|---|---|
 | 类型检查 | `tsc --noEmit`（`strict`、`noUncheckedIndexedAccess`、`noImplicitOverride`） | CI 式脚本 `npm run typecheck` 零错误 |
 | 领域单元测试 | `domain` 无 I/O，可对 Composite 语义（move/scale 递归）、id 唯一性、set 白名单直接断言 | `tests/domain/*` |
-| 命令测试 | 每个命令的 `execute` → `undo` 后**结构深比较**回到执行前状态 | `tests/commands/*` |
-| 场景回放（对拍） | 把作业 §6 的 transcript 存成脚本，回放后逐行比对 stdout | `tests/scenarios/*.txt` + 快照 |
-| Round-trip | `save` → `read` → 深比较，并断言序列化文本可被浏览器/解析器接受 | `tests/io/*` |
-| 错误路径 | §4.2 每一行错误信息都有一个用例，断言"失败不改状态" | `tests/commands/errors.test.ts` |
-| 手工验收 | 用浏览器打开 `save` 出的 SVG 目视检查；`tree`/`show` 与预期结构对照 | 截图 / 记录 |
+| 命令测试 | 每个命令的 `execute` → `undo` 后**结构深比较**回到执行前状态 | `tests/commands/editCommands.test.ts` |
+| 场景回放（对拍） | 把作业 §6 的 transcript 存成脚本，回放后逐行比对 golden 文件 | `tests/scenarios/replay.test.ts` |
+| Round-trip | `save` → `read` → 结构深比较，并断言序列化幂等 | `tests/io/roundtrip.test.ts` |
+| 错误路径 | §4.2 每一行错误信息都有一个用例，断言"失败不改状态" | `tests/commands/errorPaths.test.ts` |
+| 架构约束 | 依赖方向矩阵做成可执行检查，违规即退出码 1 | `tools/check-layers.mjs` |
+| 手工验收 | 用浏览器（无头 Edge）打开 `save` 出的 SVG 截图目视核对 | `doc/images/*.png` |
+
+### 4.2 命令覆盖矩阵（作业 §3 命令总表，共 19 条）
+
+判定口径：**正常路径**要有成功用例，**错误路径**要有失败用例且断言状态不变，
+**undo 还原**要验证执行后撤销能回到原状（文档类与显示类命令本就不进撤销栈，标 `—` 并注明原因）。
+
+| # | 命令 | 正常路径 | 错误路径 | undo 还原 |
+|---|---|---|---|---|
+| 1 | `init [w] [h]` | `tests/cli/Repl.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 11 条（未 init 时报 no document） | — 文档类，换文档后历史作废 |
+| 2 | `read <file.svg>` | `tests/io/roundtrip.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 10a 条（文件不存在） | — 文档类 |
+| 3 | `save [file.svg]` | `tests/commands/errorPaths.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 10b 条（不可写） | — 文档类，只上闸门 |
+| 4 | `canvas [w] [h]` | `tests/app/…`（见 `errorPaths` 的 setup） | `errorPaths` 第 11 条 + 参数个数 | — 文档类 |
+| 5 | `create <type> <id> …` | `editCommands` › create | `errorPaths` 第 1 / 3 / 4 / 5 条 | ✅ 深比较 |
+| 6 | `delete <id>` | `editCommands` › delete | `errorPaths` 第 2 条 | ✅ 深比较（含整棵子树） |
+| 7 | `move <id> <dx> <dy>` | `editCommands` › move | `errorPaths` 第 2 条 + 参数个数 | ✅ 深比较（含小数） |
+| 8 | `scale <id> <factor>` | `editCommands` › scale | `errorPaths` 第 9 条 | ✅ 深比较（`scale(3)` 精确回退） |
+| 9 | `set <id> <attr> <value>` | `editCommands` › set | `errorPaths` › 白名单外 / 非法值 | ✅ 深比较（含"原本没有的属性去掉了"） |
+| 10 | `group <newGid> <id1> …` | `editCommands` › group | `errorPaths` 第 7 条 + id 冲突 | ✅ 一次撤销还原全部 |
+| 11 | `ungroup <gid>` | `editCommands` › ungroup | `errorPaths` 第 6 / 8 条 | ✅ 深比较 |
+| 12 | `addto <gid> <id>` | `editCommands` › addto | `errorPaths` 第 7 条（成环） | ✅ 深比较（回原父容器原位） |
+| 13 | `front <id>` | `editCommands` › front | `errorPaths` 第 2 条 | ✅ 回到原下标 |
+| 14 | `back <id>` | `editCommands` › back | `errorPaths` 第 2 条 | ✅ 回到原下标 |
+| 15 | `tree [id]` | `tests/cli/render.test.ts`、`tests/scenarios/replay.test.ts` | `render` 不存在的 id | — 显示类 |
+| 16 | `show <id>` | `tests/cli/render.test.ts` | 不存在的 id | — 显示类 |
+| 17 | `help` | `tests/cli/CommandRegistry.test.ts` | — | — 显示类 |
+| 18 | `undo` | `editCommands` › undo/redo 交互、`tests/commands/CommandHistory.test.ts` | `errorPaths`（空栈、IO 闸门） | — 它本身就是撤销 |
+| 19 | `redo` | 同上 | `errorPaths`（空栈、IO 闸门） | — |
+
+**覆盖率：19 / 19。** 唯一没有对应错误用例的是 `help`——它没有可失败的输入路径。
+
+### 4.3 错误信息覆盖（作业 §4.2，共 12 行）
+
+| # | 场景 | 用例 | 状态 |
+|---|---|---|---|
+| 1 | id 已存在 | `errorPaths` › 1 | ✅ |
+| 2 | id 不存在 | `errorPaths` › 2 | ✅ |
+| 3 | `in` 目标不存在 | `errorPaths` › 3 | ✅ |
+| 4 | `in` 目标不是容器 | `errorPaths` › 4 | ✅ |
+| 5 | 未注册的图形类型 | `errorPaths` › 5 | ✅ |
+| 6 | ungroup 复合图形 | `errorPaths` › 6 | ⚠️ 本阶段 N/A（`box` 属插件阶段，该错误无法触发）；用例改为验证"普通非顶层 `g` 必须能解散" |
+| 7 | group 含容器与其子孙 | `errorPaths` › 7 | ✅ |
+| 8 | ungroup 根级容器 | `errorPaths` › 8 | ✅ |
+| 9 | scale 非正数 | `errorPaths` › 9 | ✅ |
+| 10 | 文件不存在 / 不可写 | `errorPaths` › 10a / 10b | ✅ |
+| 11 | 未 read/init | `errorPaths` › 11 | ✅ |
+| 12 | `undo not allowed after io command`（§4.3） | `errorPaths` › 闸门用例 | ✅ |
+
+**覆盖率：11 / 11 可触发项**（第 6 条按阶段边界不计）。
+
+每条错误用例都同时断言两件事：**报出规定文案** + **整棵树深比较不变、撤销栈深度不变**。
+只断言文案是不够的——实现里"先改一半再抛错"也能让文案通过。
 
 ---
 
