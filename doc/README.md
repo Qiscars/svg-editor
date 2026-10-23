@@ -386,6 +386,68 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 | 3 | `save` 出的 SVG 在浏览器正确渲染 | ✅ 通过 | 用无头 Edge 打开 `demo.svg` 与 `flowchart.svg` 截图：`doc/images/demo-render.png`、`doc/images/flowchart-render.png`。可见白底、红色圆（已移动到 130,100）、蓝色方块、文字，以及流程图的连线与中文标题 |
 | 4 | 文档类命令后 `undo` 被拒 | ✅ 通过 | `save demo.svg` 之后 `undo` 输出 `error: undo not allowed after io command`；`init` / `read` 走 `CommandHistory.reset()`（连栈一起作废），`save` / `canvas` 走 `markIoBoundary()`（栈保留、只上闸门） |
 
+### 2.5 阶段 3：质量保证与收尾（10/23）
+
+#### ① 依赖检查第一次运行就把我判了：12 处违规
+
+Day 3 的第一件事是给 §1.3 的规则写一个可执行检查。写完后第一次运行：
+
+```text
+依赖方向检查失败：12 处违规（app:1 cli:12 commands:15 domain:13 io:5 entry:1 registry:2）
+```
+
+全部是 `cli → commands`。原因很朴素：Handler 为了 `new XxxCommand(...)` 直接 import 了
+9 个命令类，`Tokenizer` 为了抛语法错误引用了 `CommandError`。
+
+这里的判断很关键：**是我实现时偷懒了，还是规则定错了？**
+
+- 方案 §1.1 写的是"app：接收结构化调用 → **造命令** → 执行"；
+- 方案 §1.3 的 cli 允许依赖表里没有 `commands`。
+
+两条都指向同一结论：**代码错了，规则没错**。所以选择改代码而不是改规则。
+
+修复用了三个候选方案里最"疼"的一个：
+
+| 方案 | 代价 | 取舍 |
+|---|---|---|
+| A. 放宽 §1.3，允许 cli → commands | 改两行文档 | ✗ 等于承认"分层只是写着好看" |
+| B. 让 registry 帮 cli 造命令 | 注册表要认识所有命令参数 | ✗ 把分派点变成业务层 |
+| C. 把命令构造下沉到 `EditorApp` | 应用层多 9 个方法，cli 层要重写 | ✓ 与 §1.1 的原意一致 |
+
+选 C。改完 `check-layers` 退出码 0。**这件事本身就是 §1.3 那句"违反规则的依赖即为待处理项"的意义**：
+如果没有脚本，这 12 处会一直躺在那里，而我在写一致性自查时会理直气壮地写"经检查无违反"。
+
+#### ② 又一个测试假设被推翻：XML 转义规则
+
+写 io 测试时我断言"文本里的 `"` 也会转义成 `&quot;`"，测试红了。查下来是**测试错了**：
+
+| 位置 | `<` | `&` | `"` |
+|---|---|---|---|
+| 元素**内容** | 必须转义 | 必须转义 | **无需转义**（合法字符） |
+| 属性**值** | 必须转义 | 必须转义 | 必须转义 |
+
+改成两个用例分别钉住两种情况。这和 §2.2 ③ 是同一类经验：**测试先去验证"我以为的规则"，
+发现规则本身理解错了，改的应该是测试而不是实现**。但前提是能分清这两种情况——
+判据是去查规范/实现，而不是"哪个改起来更省事"。
+
+#### ③ 有一条错误我根本无法覆盖
+
+作业 §4.2 的 `cannot ungroup composite shape` 是给插件阶段的 `box` 用的。本阶段没有插件，
+这条错误永远不会被触发。
+
+处理方式：**不写假装通过的用例**。改成验证"普通非顶层 `g` 必须能解散"，
+并在 `§4.3` 明确标注 `⚠️ 本阶段 N/A`，覆盖率写成 **11 / 11 可触发项**而不是含糊的 12/12。
+
+把"没实现"混进"覆盖率 100%"是最容易糊弄也最没价值的做法——评审只要问一句
+"这条错误在哪触发"就穿帮了。
+
+#### ④ 计划外多了一个提交
+
+原计划 32 个提交，实际 33 个：`#26a` 是重构，不在计划里。
+
+处理方式：在看板 `§2` 里加一行标注「**追加**」，写明原因（检查器抓到违规必须改），
+而不是悄悄改编号或压进别的提交。计划可以变，但变化要留痕——这是 `doc/PLAN.md §5.1` 的用意。
+
 ---
 
 ## 3. 一致性自查
@@ -507,8 +569,8 @@ node tools/check-layers.mjs                     # 架构约束
 | 项 | 结果 |
 |---|---|
 | 类型检查 | 0 错误（`strict` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`） |
-| 测试文件 | 12 个 |
-| 测试用例 | **167 个，全部通过** |
+| 测试文件 | 13 个 |
+| 测试用例 | **175 个，全部通过** |
 | 架构约束 | `check-layers` 退出码 0（违规 0 处） |
 | 场景对拍 | 作业 §6 会话 69 行输出与 golden 文件逐字相等 |
 
@@ -519,6 +581,7 @@ node tools/check-layers.mjs                     # 架构约束
 | 领域模型 | `tests/domain/{transform,attributes,document}.test.ts` | 12 + 21 + 16 = 49 |
 | 命令与撤销 | `tests/commands/{CommandHistory,editCommands,errorPaths}.test.ts` | 11 + 31 + 18 = 60 |
 | CLI | `tests/cli/{Tokenizer,CommandRegistry,render,Repl}.test.ts` | 13 + 8 + 8 + 7 = 36 |
+| 应用层 | `tests/app/EditorApp.test.ts` | 8 |
 | 持久化 | `tests/io/roundtrip.test.ts` | 17 |
 | 场景回放 | `tests/scenarios/replay.test.ts` | 5 |
 
@@ -542,10 +605,10 @@ node tools/check-layers.mjs                     # 架构约束
 
 | # | 命令 | 正常路径 | 错误路径 | undo 还原 |
 |---|---|---|---|---|
-| 1 | `init [w] [h]` | `tests/cli/Repl.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 11 条（未 init 时报 no document） | — 文档类，换文档后历史作废 |
-| 2 | `read <file.svg>` | `tests/io/roundtrip.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 10a 条（文件不存在） | — 文档类 |
-| 3 | `save [file.svg]` | `tests/commands/errorPaths.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 10b 条（不可写） | — 文档类，只上闸门 |
-| 4 | `canvas [w] [h]` | `tests/app/…`（见 `errorPaths` 的 setup） | `errorPaths` 第 11 条 + 参数个数 | — 文档类 |
+| 1 | `init [w] [h]` | `tests/app/EditorApp.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 11 条（未 init 时报 no document） | — 文档类，换文档后历史作废 |
+| 2 | `read <file.svg>` | `tests/app/EditorApp.test.ts`、`tests/io/roundtrip.test.ts` | `errorPaths` 第 10a 条（文件不存在） | — 文档类 |
+| 3 | `save [file.svg]` | `tests/app/EditorApp.test.ts`、`tests/scenarios/replay.test.ts` | `errorPaths` 第 10b 条（不可写） | — 文档类，只上闸门 |
+| 4 | `canvas [w] [h]` | `tests/app/EditorApp.test.ts`（显示尺寸 / 改尺寸 / 坐标不随画布变化） | `errorPaths` 第 11 条 + 参数个数 | — 文档类，只上闸门 |
 | 5 | `create <type> <id> …` | `editCommands` › create | `errorPaths` 第 1 / 3 / 4 / 5 条 | ✅ 深比较 |
 | 6 | `delete <id>` | `editCommands` › delete | `errorPaths` 第 2 条 | ✅ 深比较（含整棵子树） |
 | 7 | `move <id> <dx> <dy>` | `editCommands` › move | `errorPaths` 第 2 条 + 参数个数 | ✅ 深比较（含小数） |
