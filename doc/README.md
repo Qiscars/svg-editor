@@ -68,6 +68,9 @@ svg-editor/
 └── tests/                     # 单元测试 + 场景回放测试
 ```
 
+> 上面是**方案 v1 的目录设计**。实现期在层内新增了 9 个辅助类、删除了 1 个（`HelpText.ts`），
+> 层归属与目录层级零变化。逐条偏差与原因见 [§3.1 一致性自查](#31-模块划分实际目录与方案是否一致)。
+
 **各模块职责**
 
 | 模块 | 职责 | 明确*不*做的事 |
@@ -387,22 +390,139 @@ agent 通道）时，只新增一个 `cli` 层的 adapter，`app` 与 `domain` �
 
 ## 3. 一致性自查
 
-> **状态：待填写。** 实现完成后对照本节逐条如实回答，而不是复述方案。
+> 本节对照方案**如实回答**，不是复述方案。检查方法尽量做成可重跑的命令，结论附实测输出。
 
 ### 3.1 模块划分：实际目录与方案是否一致？
 
-*（实现完成后填写：逐目录对照 §1.1，列出新增/合并/拆分的目录与原因，不一致处必须已在 §5 登记。）*
+**检查方法**：`git ls-files src` 取实际清单，与 §1.1 的目录树逐条对照。
+
+**实际规模**：50 个源文件 —— `domain` 13、`commands` 15、`io` 5、`registry` 2、`app` 1、`cli` 13、入口 1。
+
+**一致的部分**（§1.1 列出的路径全部存在，职责未变）：
+
+```text
+src/main.ts
+src/domain/{Shape, Container, Canvas, Document, IdIndex, ShapeError}.ts   + leaf/×5
+src/commands/{Command, CommandContext, CommandHistory}.ts                 + impl/×9
+src/io/{FileGateway, SvgParser, SvgSerializer}.ts
+src/registry/{ShapeFactory, CommandRegistry}.ts
+src/app/EditorApp.ts
+src/cli/{Repl, Tokenizer, CommandParser, ConsoleOutput}.ts               + render/×2
+```
+
+**偏差 10 项**（全部已登记到 §5 修订记录 v1.4）：
+
+| 文件 | 类型 | 引入于 | 方案里为什么没有 |
+|---|---|---|---|
+| `domain/Numbers.ts` | 新增 | #6 | 数值解析与格式化需要被 `set`、`tree`、序列化共用；写方案时没意识到会有三处共用同一套格式 |
+| `domain/EditorError.ts` | 新增 | #24 | 统一错误基类，是"两个错误子类各管一段、表现层要分别 catch"这个问题的收口 |
+| `commands/DocumentCommand.ts` | 新增 | #12 | 命令基类，省掉 9 条命令重复写 `context` 字段与构造函数 |
+| `commands/CommandError.ts` | 新增 | #11 | 与 `ShapeError` 分工：一个说"图形树不成立"，一个说"这个操作现在不能做" |
+| `commands/ShapeSnapshot.ts` | 新增 | #13 | 方案写的是"命令自己持有 Memento"；实现时抽成独立类，因为 move 与 scale 共用同一套快照逻辑 |
+| `io/xml/{XmlElement, XmlParser}.ts` | 新增 | #19 | 自研 XML 子集解析器。方案假设"解析 SVG"是件小事，实际要处理声明、注释、自闭合、属性和实体 |
+| `cli/CliError.ts` | 新增 | #26a | 语法类错误（引号、参数个数）归表现层，是被 §3.2 的检查逼出来的 |
+| `cli/handlers/×5` | 新增 | #22 | 命令表的具体条目。方案只写到 `CommandRegistry` 这一层，没细化到"每条命令一个声明放哪" |
+| `cli/DefaultCommandRegistry.ts` | 新增 | #22 | 唯一装配点（全项目仅此处知道"一共有哪些命令"） |
+| `cli/HelpText.ts` | **删除** | #22 | 待重构项 R3：静态帮助常量被注册表生成的文本取代 |
+
+**结论**：**层归属零变化**——偏差全部是"层内新增辅助类"，没有任何文件跨层搬家，也没有新的目录层级。
+唯一的删除是方案自己列为待重构项 R3 的 `HelpText.ts`，属于按计划还债。
 
 ### 3.2 依赖方向：方案里的规则有没有被违反？
 
-*（实现完成后填写：说明抽样检查的方法，例如用 `rg "^import" src/` 逐层核对 import 目标，
-或加一条脚本断言 `src/domain/**` 不出现 `node:fs`，并附检查结果。）*
+**检查方法**：不靠抽样肉眼看，做成可执行检查。
+
+```text
+node tools/check-layers.mjs
+```
+
+它扫描 `src/**/*.ts` 的全部静态 `import` / `export … from`，按 §1.3 的矩阵逐条断言，
+额外检查 `domain` 不得出现 `node:*`。违规即退出码 1。
+
+#### 第一次运行：失败，12 处违规
+
+```text
+依赖方向检查失败：12 处违规（app:1  cli:12  commands:15  domain:13  io:5  entry:1  registry:2）
+  src/cli/handlers/EditCommandHandlers.ts:3   cli 不允许依赖 commands
+      ../../commands/impl/AddToCommand.js
+  src/cli/handlers/EditCommandHandlers.ts:4   cli 不允许依赖 commands
+      ../../commands/impl/CreateShapeCommand.js
+  …（另 8 条同类：10 个命令类 + CommandError）
+  src/cli/Tokenizer.ts:1                      cli 不允许依赖 commands
+      ../commands/CommandError.js
+```
+
+完整清单存档在 [`doc/quality/check-layers-before.txt`](quality/check-layers-before.txt)。
+
+**根因**：Handler 为了 `new XxxCommand(...)` 直接 import 了 9 个命令类；`Tokenizer` 为了抛
+`unclosed double quote` 引用了 `CommandError`。而 §1.1 明确写着"app 负责造命令"，
+§1.3 的 cli 允许依赖表里也没有 `commands`——**是实现的错，不是规则的错**。
+
+**修复**（追加提交 `#26a`，详见 §2.3）：
+
+- 命令构造下沉到 `EditorApp` 的 9 个编辑方法，表现层只表达意图；
+- 语法类错误改由新增的 `cli/CliError` 承担（它的判据完全来自命令行文本，归表现层更准确）。
+
+#### 修复后的输出
+
+```text
+依赖方向检查通过（app:1  cli:13  commands:15  domain:13  io:5  entry:1  registry:2）
+```
+
+退出码 0，已纳入 `npm run verify` 与每个提交的门禁。
+
+#### 抽样核对（脚本之外的旁证）
+
+`domain` 层 27 条 `import` 全部指向 domain 内部（`./` 或 `../`），`node:` 出现 **0 次**：
+
+```text
+Canvas.ts: ./Container.js          Document.ts: ./IdIndex.js        Rect.ts: ../Shape.js
+Circle.ts: ../Numbers.js           IdIndex.ts:  ./Shape.js          Shape.ts: ./Numbers.js
+Container.ts: ./Shape.js           Numbers.ts:  ./ShapeError.js     …
+（共 27 条，无一条跨层）
+```
+
+**结论**：**规则最终没有被违反**，但违规真实发生过 12 次——是这条可执行检查把它们拦住的，
+不是自觉。这也解释了 §1.3 那句"违反规则的依赖即为待处理项"为什么要配一个脚本。
 
 ---
 
 ## 4. 质量保证手段
 
-*（本节随实现逐步补充实测结果；以下为约定采用的手段。）*
+### 4.1 门禁与实测结果
+
+每个提交前都跑同一组命令，四条全绿才允许提交：
+
+```text
+node_modules/.bin/tsc -p tsconfig.json          # 编译
+node_modules/.bin/tsc -p tsconfig.test.json     # 类型检查（含 tests/）
+node_modules/.bin/vitest run                    # 单元 + 集成 + 场景测试
+node tools/check-layers.mjs                     # 架构约束
+```
+
+（等价的单条命令：`npm run verify`。）
+
+定稿时的实测值：
+
+| 项 | 结果 |
+|---|---|
+| 类型检查 | 0 错误（`strict` + `noUncheckedIndexedAccess` + `noImplicitOverride` + `verbatimModuleSyntax`） |
+| 测试文件 | 12 个 |
+| 测试用例 | **167 个，全部通过** |
+| 架构约束 | `check-layers` 退出码 0（违规 0 处） |
+| 场景对拍 | 作业 §6 会话 69 行输出与 golden 文件逐字相等 |
+
+用例分布：
+
+| 层 / 主题 | 文件 | 用例数 |
+|---|---|---|
+| 领域模型 | `tests/domain/{transform,attributes,document}.test.ts` | 12 + 21 + 16 = 49 |
+| 命令与撤销 | `tests/commands/{CommandHistory,editCommands,errorPaths}.test.ts` | 11 + 31 + 18 = 60 |
+| CLI | `tests/cli/{Tokenizer,CommandRegistry,render,Repl}.test.ts` | 13 + 8 + 8 + 7 = 36 |
+| 持久化 | `tests/io/roundtrip.test.ts` | 17 |
+| 场景回放 | `tests/scenarios/replay.test.ts` | 5 |
+
+下面几节说明这些手段各自要挡住什么。
 
 | 手段 | 具体做法 | 期望证据 |
 |---|---|---|
