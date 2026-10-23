@@ -18,14 +18,14 @@
 
 | 项 | 值 |
 |---|---|
-| 今天 | 2026-10-21 |
-| 当前阶段 | **Day 2 · 已完成（CLI 可用，四条验收全过）** |
-| 已完成提交 | 25 / 32 |
-| 最近一次提交 | `53d7b25 docs(process): 追加 Day 1–2 过程记录` |
-| 下一个提交 | #26 `tools: 依赖方向检查脚本`（Day 3 第 1 段，10/23 14:52） |
-| 本次前置检查 | `N = 25`，本段区间 `[25, 25]`，`N = 25` → 无欠账，正常推进 |
+| 今天 | 2026-10-23 |
+| 当前阶段 | **Day 3 · 进行中（质量手段已落地）** |
+| 已完成提交 | 27 / 32（另有 1 个追加提交 `#26a`） |
+| 最近一次提交 | `db780e0 test(scenarios): 回放 §6 与 §6.1 transcript` |
+| 下一个提交 | #28 `test(io): save→read round-trip 与缺 id 补名`（Day 3 第 2 段，10/23 17:26） |
+| 本次前置检查 | `N = 26`，本段区间 `[26, 27]`，`26 ≤ N ≤ 27` → 无欠账，正常推进 |
 | 阻塞项 | 无 |
-| 距离截止 | 4 天（含 2 天缓冲） |
+| 距离截止 | 2 天（含 1 天缓冲） |
 
 ---
 
@@ -110,8 +110,9 @@
 
 | # | 提交 | 产出 | 状态 | sha |
 |---|---|---|---|---|
-| 26 | `tools: 依赖方向检查脚本` | `tools/check-layers.mjs` | ⬜ | — |
-| 27 | `test(scenarios): 回放 §6 与 §6.1 transcript` | `tests/scenarios/*` | ⬜ | — |
+| 26 | `tools: 依赖方向检查脚本` | `tools/check-layers.mjs` | ✅ | `32aa8a4` |
+| — | *追加* `refactor(app): 把编辑命令的构造下沉到 EditorApp` | `app/EditorApp.ts` / `cli/CliError.ts` | ✅ | `8699e6f` |
+| 27 | `test(scenarios): 回放 §6 与 §6.1 transcript` | `tests/scenarios/*` | ✅ | `db780e0` |
 | 28 | `test(io): save→read round-trip 与缺 id 补名` | `tests/io/*` | ⬜ | — |
 | 29 | `test(commands): 错误路径 §4.2 全覆盖` | `tests/commands/errors.test.ts` | ⬜ | — |
 | 30 | `docs: 补齐一致性自查与质量保证实测结果` | `doc/README.md §3 §4` | ⬜ | — |
@@ -178,6 +179,7 @@ node_modules/.bin/vitest run
 | 6 | 2026-10-22 | **前置检查：`N = 18`，本段 `[18, 20]`，无欠账**（定时提醒因会话离线晚到约 2 小时）。落地 ShapeFactory + SVG 序列化、XML/SVG 解析与文件网关、EditorApp 编排 | #18–#20 | 序列化输出与作业 §0.1 样例逐字一致；用作业 §6 的 other.svg 实测 7 元素 + 1 条补名 warning；save→read 序列化稳定 | 代理掉线导致推送延后，见 §5.2 |
 | 7 | 2026-10-22 | **前置检查：`N = 21`，本段 `[21, 24]`，无欠账**（代理恢复后先补推上段 5 个提交）。接入 CLI：分词与解析、命令注册表与 help 生成、tree/show 渲染、统一错误前缀 | #21–#24 | 作业 §6 会话序列与 §5.1 / §5.2 的 tree、show 输出逐行复现；累计 127 个用例全绿；待重构项 R3（静态 help 常量）已消除 | 无欠账。Day 2 只剩过程记录与验收 |
 | 8 | 2026-10-22 | **前置检查：`N = 25`，本段 `[25, 25]`，无欠账**。补写 Day 1–2 过程记录；做 Day 2 四条端到端验收 | #25 | **Day 2 四条验收全过**：§6 回放 69 行逐字对上（仅原文 `y=2` 笔误按 SVG 规范输出 `cy=2`）；§6.1 流程图 8 元素正确（树宽差 3 列，格式差异）；save 的 SVG 用无头 Edge 渲染并截图（`doc/images/`）；`save` 后 undo 被拒 | Day 2 收工，等 Day 3 |
+| 9 | 2026-10-23 | **前置检查：`N = 26`，本段 `[26, 27]`，无欠账**。引入依赖方向检查脚本；按检查结果重构 cli 层；把人工验收变成自动对拍 | #26、#26a、#27 | **检查器第一次运行就抓到 12 处真实违规（全是 cli → commands）**，重构后归零；场景回放与 golden 文件 69 行逐字相等；累计 132 个用例全绿 | 无欠账。剩余 #28–#32 与 tag |
 
 ### 5.1 本段发现与待办
 
@@ -190,6 +192,8 @@ node_modules/.bin/vitest run
 | 5 | `CommandError` 与 `ShapeError` 目前是两条并列的 `Error` 子类，表现层要分别 `catch` | **已在 #24 收口**：新增 `domain/EditorError` 作为共同基类，两者改为继承它；Repl 只需判断一次 `instanceof EditorError`，非预期异常额外标 `internal:`（`02eeef9`） |
 | 6 | `set` 的非法数值是在 `execute()` 期才被拒绝，构造期只查白名单 | **刻意保留**：属性值的合法性由 `AttributeSpec.write` 唯一判断，命令层不重复实现解析。安全性由 `CommandHistory.run` 保证——execute 抛错就不入栈、不改状态（`5ba2bc1` 有用例覆盖） |
 | 7 | **计划里的命令条数算错了**：原写"23 条命令"，实际作业 §3 共 17 行、合计 **19 条命令**（front/back、undo/redo 各占一行但含两条） | **已在本段修正**：§1 总览与 Day 3 验收标准的"23/23"改为"19/19"，Day 3 的覆盖矩阵按 19 条对账。这也说明验收标准要拿命令总表逐行数，而不是凭印象 |
+| 8 | **依赖方向检查第一次运行就抓到 12 处真实违规**，全部是 `cli → commands`：Handler 直接 `new` 命令对象，Tokenizer 引用 `CommandError` | **改代码而不是改规则**：命令构造下沉到 `EditorApp` 的九个方法；语法类错误（引号未闭合、参数个数）改由新增的 `cli/CliError` 承担。结果归零，追加提交 `#26a`（`8699e6f`）。清单存档 `doc/quality/check-layers-before.txt`，结果贴进 `doc/README.md §3.2` |
+| 9 | `CommandError.usage` 与 `CliError.usage` 各存在一份，文案相同 | **刻意保留**：`CommandRegistry` 允许依赖 `commands`，它做参数个数校验时用前者；`cli` 不允许依赖 `commands`，自己切参数时用后者。两处都有专门用例钉住文案，任一处漂移会被测出来 |
 
 ### 5.2 待推送（网络阻塞，非代码问题）
 
