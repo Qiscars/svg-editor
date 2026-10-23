@@ -1,5 +1,5 @@
 import type { EditorApp } from '../../app/EditorApp.js';
-import { CommandError } from '../../commands/CommandError.js';
+import { CliError } from '../CliError.js';
 import type { CommandSpec } from '../../registry/CommandRegistry.js';
 import { Arguments } from './Arguments.js';
 
@@ -42,7 +42,7 @@ export function documentCommandHandlers(): CommandSpec<EditorApp>[] {
       run: (app, args) => {
         // 只给一个参数无法确定另一个维度，按用法错误处理而不是猜默认值
         if (args.length === 1) {
-          throw CommandError.usage(CANVAS_USAGE);
+          throw CliError.usage(CANVAS_USAGE);
         }
         return app.canvas(
           Arguments.optionalNumber(args, 0, 'w'),

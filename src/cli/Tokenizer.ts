@@ -1,4 +1,4 @@
-import { CommandError } from '../commands/CommandError.js';
+import { CliError } from './CliError.js';
 
 /**
  * 命令行分词。
@@ -44,7 +44,7 @@ export class Tokenizer {
     }
 
     if (inQuotes) {
-      throw CommandError.unclosedQuote();
+      throw CliError.unclosedQuote();
     }
     if (started) {
       tokens.push(current);

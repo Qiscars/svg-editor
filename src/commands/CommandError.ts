@@ -39,10 +39,13 @@ export class CommandError extends EditorError {
     return new CommandError(`unknown command: ${name}`);
   }
 
-  static unclosedQuote(): CommandError {
-    return new CommandError('unclosed double quote');
-  }
-
+  /**
+   * 参数个数不符。
+   *
+   * `CommandRegistry` 用它（注册表允许依赖 commands），而 `cli` 自己切参数时
+   * 用 `CliError.usage`（cli 不允许依赖 commands）。两处文案相同，各有用例覆盖：
+   * `tests/cli/CommandRegistry.test.ts` 与 `tests/cli/Repl.test.ts`。
+   */
   static usage(usage: string): CommandError {
     return new CommandError(`usage: ${usage}`);
   }
