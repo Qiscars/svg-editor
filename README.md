@@ -67,18 +67,35 @@ node dist/main.js < doc/scenarios/basic-session.txt
 - Node.js >= 20.11（开发时使用 v24）
 - TypeScript（`devDependencies` 内，随 `npm install` 安装）
 
+## 文档 PDF（提交用）
+
+作业平台要求上传**一份文件**，所以文档除了 Markdown 原稿，还提供了一份自包含的
+[`doc/README.pdf`](doc/README.pdf)（17 页，图片已内联）。重新生成：
+
+```bash
+node tools/md-to-html.mjs                       # Markdown → 自包含 HTML
+msedge --headless --no-pdf-header-footer \
+  --print-to-pdf=doc/README.pdf out/doc-build/README.html
+```
+
+组件图也可以重渲染（需要 `plantuml.jar`）：
+
+```bash
+java -jar plantuml.jar -tpng -charset UTF-8 doc/diagrams/component.puml
+```
+
 ## 目录
 
 ```text
 svg-editor/
-├── doc/            # 文档：README.md 为作业正文，PLAN.md 为进度看板
+├── doc/            # 文档：README.md 为作业正文（另有 README.pdf），PLAN.md 为进度看板
 │   ├── diagrams/   #   组件图（PlantUML 源码 + 渲染产物）
 │   ├── scenarios/  #   可回放的会话脚本 + golden 输出
 │   ├── images/     #   save 产物的真实渲染截图
 │   └── quality/    #   架构检查的历史输出存档
 ├── src/            # 源码，按架构分层组织（domain / commands / io / registry / app / cli）
 ├── tests/          # 单元测试 + 场景回放
-├── tools/          # 架构约束检查脚本
+├── tools/          # 架构约束检查 + 文档构建脚本
 ├── package.json
 ├── tsconfig.json
 └── tsconfig.test.json
