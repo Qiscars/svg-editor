@@ -72,6 +72,7 @@ node dist/main.js < doc/scenarios/basic-session.txt
 ```text
 svg-editor/
 ├── doc/            # 文档：README.md 为作业正文，PLAN.md 为进度看板
+│   ├── diagrams/   #   组件图（PlantUML 源码 + 渲染产物）
 │   ├── scenarios/  #   可回放的会话脚本 + golden 输出
 │   ├── images/     #   save 产物的真实渲染截图
 │   └── quality/    #   架构检查的历史输出存档

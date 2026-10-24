@@ -1,0 +1,65 @@
+@startuml
+' Lab1 Phase 1 — CLI SVG 编辑器的组件图
+' 与 doc/README.md §1.3 的依赖方向规则一一对应：箭头方向即编译期 import 方向。
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName "Microsoft YaHei"
+skinparam shadowing false
+left to right direction
+
+package "cli（表现层）" {
+  [Repl]
+  [Tokenizer]
+  [CommandParser]
+  [Renderers]
+}
+
+package "app（应用层）" {
+  [EditorApp]
+}
+
+package "commands（命令层）" {
+  [Command 接口]
+  [CommandHistory]
+  [具体命令]
+}
+
+package "registry（装配层）" {
+  [CommandRegistry]
+  [ShapeFactory]
+}
+
+package "domain（领域模型）" {
+  [Document]
+  [Shape 抽象]
+  [Container]
+  [Leaf 图形]
+}
+
+package "io（持久化层）" {
+  [FileGateway]
+  [SvgParser]
+  [SvgSerializer]
+}
+
+[Repl] --> [Tokenizer]
+[Repl] --> [CommandParser]
+[Repl] --> [Renderers]
+[Repl] --> [EditorApp]
+[CommandParser] --> [CommandRegistry]
+[EditorApp] --> [CommandHistory]
+[EditorApp] --> [Document]
+[EditorApp] --> [Command 接口]
+[CommandHistory] --> [Command 接口]
+[具体命令] --> [Document]
+[CommandRegistry] --> [具体命令]
+[CommandRegistry] --> [Command 接口]
+[SvgParser] --> [ShapeFactory]
+[FileGateway] --> [SvgParser]
+[FileGateway] --> [SvgSerializer]
+[SvgSerializer] --> [Document]
+[Document] *-- [Shape 抽象]
+[Shape 抽象] <|-- [Container]
+[Shape 抽象] <|-- [Leaf 图形]
+[EditorApp] ..> [FileGateway]
+@enduml
