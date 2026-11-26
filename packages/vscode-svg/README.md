@@ -15,6 +15,7 @@ packages/vscode-svg/
 ├── samples/
 │   └── example.svg       # 含嵌套 g、带 id 与无 id 元素的示例
 └── src/
+    ├── package.json      # 只把源码标记为 ESM，供仓库根 typecheck 使用（见构建说明）
     ├── OutlineBuilder.ts # 纯逻辑：容错 XML 扫描器 + OutlineNode（不 import 'vscode'）
     ├── fileBadge.ts      # 纯逻辑：isSvgPath + 徽标常量（不 import 'vscode'）
     └── extension.ts      # 唯一的 VSCode 适配层（FileDecorationProvider / DocumentSymbolProvider）
@@ -92,7 +93,10 @@ code --extensionDevelopmentPath="<仓库绝对路径>/packages/vscode-svg"
   - 扫描属性时按引号成对跳过，所以属性值里的 `>` 不会被误判成标签结束。
   - 未闭合、结束标签不匹配、属性值没有引号等结构错误一律抛 `XmlOutlineError`。
 - **不完整 XML 的处理**：`OutlineBuilder.build` 捕获 `XmlOutlineError` 并返回 `[]`；适配层看到空数组就返回空大纲，因此编辑到一半的文档不会让扩展崩溃。`XmlOutlineScanner.parse()` 仍然保持“抛错”的严格契约，方便测试和别的调用方决定如何处理。
-- **输出格式为 CommonJS**（包内没有 `"type": "module"`），以兼容 `engines.vscode >= 1.85` 的扩展宿主；源码仍按仓库约定使用 NodeNext 和 `.js` 后缀 import。
+- **输出格式为 CommonJS，兼容 `engines.vscode >= 1.85` 的扩展宿主**
+  - 扩展根的 `package.json` 不声明 `"type": "module"`，所以 `dist/*.js` 被 Node 当作 CJS，VSCode 1.85 的 `require()` 能直接加载。
+  - `src/package.json` 只把源码标记为 ESM，使仓库根的 `tsconfig.test.json`（启用 `verbatimModuleSyntax`）在 typecheck `tests/vscode` 导入的源文件时不把 ESM 语法误判为 CJS。
+  - 本包的 `tsconfig.json` 因此显式覆盖 `module: CommonJS`、`moduleResolution: Bundler` 与 `verbatimModuleSyntax: false`；`strict`、`noUncheckedIndexedAccess`、`noImplicitOverride` 等严格选项仍全部继承。
 
 ## 测试
 

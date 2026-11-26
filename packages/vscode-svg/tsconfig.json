@@ -3,9 +3,13 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    // VSCode 1.85 的扩展宿主通过 require() 加载扩展，所以本包必须输出 CommonJS；
-    // 而基类的 verbatimModuleSyntax 不允许在 CommonJS 中写 ESM 语法，故在此关闭。
-    // 其余严格性选项（strict / noUncheckedIndexedAccess / NodeNext…）全部继承。
+    // 源码按 ESM 编写（src/package.json 标记 type=module），但 VSCode 1.85 的
+    // 扩展宿主通过 require() 加载扩展，必须输出 CommonJS：这里显式覆盖 module。
+    // moduleResolution 用 Bundler 才能在 CommonJS 输出下解析带 .js 后缀的 TS 源。
+    "module": "CommonJS",
+    "moduleResolution": "Bundler",
+    // 基类的 verbatimModuleSyntax 不允许在 CommonJS 中写 ESM 语法，故在此关闭。
+    // 其余严格性选项（strict / noUncheckedIndexedAccess / noImplicitOverride…）全部继承。
     "verbatimModuleSyntax": false
   },
   "include": ["src/**/*.ts"]

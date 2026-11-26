@@ -3,6 +3,10 @@
   "compilerOptions": {
     "noEmit": true,
     "declaration": false,
+    // VSCode 扩展必须编译成 CommonJS（VSCode 的扩展宿主只加载 CJS），
+    // 而本仓库其余部分是纯 ESM。测试的类型检查会把两类源文件一起读进来，
+    // 因此这里关掉 verbatimModuleSyntax——它只在有 emit 时才需要严格区分。
+    "verbatimModuleSyntax": false,
     "rootDir": "."
   },
   "include": ["tests/**/*.ts", "tools/**/*.ts"],

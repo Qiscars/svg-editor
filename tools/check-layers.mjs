@@ -14,7 +14,7 @@
  * 违规即退出码 1。
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,6 +58,9 @@ function packageOf(absolutePath) {
   }
   if (rel.startsWith('packages/host/')) {
     return 'host';
+  }
+  if (rel.startsWith('packages/vscode-svg/')) {
+    return 'vscode';
   }
   const plugin = /^plugins\/([^/]+)\//.exec(rel);
   if (plugin !== null) {
@@ -106,9 +109,14 @@ const kernelSrc = join(ROOT, 'packages', 'kernel', 'src');
 const hostSrc = join(ROOT, 'packages', 'host', 'src');
 const pluginRoot = join(ROOT, 'plugins');
 
+const vscodeSrc = join(ROOT, 'packages', 'vscode-svg', 'src');
+
 const sources = [...listTypeScript(kernelSrc), ...listTypeScript(hostSrc)];
 if (statSync(pluginRoot, { throwIfNoEntry: false }) !== undefined) {
   sources.push(...listTypeScript(pluginRoot));
+}
+if (statSync(vscodeSrc, { throwIfNoEntry: false }) !== undefined) {
+  sources.push(...listTypeScript(vscodeSrc));
 }
 
 for (const file of sources) {
@@ -118,6 +126,16 @@ for (const file of sources) {
 
   for (const specifier of importSpecifiers(source)) {
     const line = lineOf(source, specifier);
+
+    // VSCode 扩展的纯逻辑层必须与编辑器 API 隔离，否则就没法在 Node 里测
+    if (specifier === 'vscode') {
+      const pureLogic = ['OutlineBuilder.ts', 'fileBadge.ts'];
+      const name = basename(file);
+      if (pureLogic.includes(name)) {
+        report(file, line, '纯逻辑层不得 import vscode，只允许适配层 import', specifier);
+      }
+      continue;
+    }
 
     if (specifier.startsWith('node:')) {
       if (owner === 'kernel') {

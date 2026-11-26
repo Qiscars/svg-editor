@@ -11,7 +11,7 @@
 | Phase 1 定稿 | tag **`final`**（`git checkout final` 即拿到阶段一定稿状态） |
 | Phase 2 定稿 | tag **`p2`** |
 | 实现规模（Phase 1） | 50 个源文件 · 19 条命令 · 175 个测试用例 · 47 次提交 |
-| 实现规模（Phase 2） | 4 个包（kernel / host / vscode-svg）+ 4 个插件包 · 23 条命令 · 271 个测试用例 |
+| 实现规模（Phase 2） | 4 个包（kernel / host / vscode-svg）+ 4 个插件包 · 21 条命令 · 259 个测试用例 |
 | 文档版本 | v2.0（见 §8 修订记录） |
 
 ---
@@ -1124,7 +1124,7 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | 命令 | 作用 |
 |---|---|
 | `node tools/verify-assembly.mjs` | 三份会话在两种装配下逐字节对拍 + 基线回归 |
-| `node tools/check-layers.mjs` | 架构约束（含"除组合根外不得 import 插件"） |
+| `node tools/check-layers.mjs` | 架构约束：内核分层、插件只依赖内核公开 API、"除组合根外不得 import 插件"、VSCode 扩展的纯逻辑层不得 import `vscode` |
 | `node tools/metrics.mjs` | 重新生成指标 |
 | `npm run build && npm test` | 构建与全部用例 |
 
@@ -1139,10 +1139,10 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 |---|---|
 | 四个扩展点接口在内核侧 | §7.1 四张表 + `packages/kernel/src/extensions/` |
 | 以类实现扩展点 | `BoxShapeProvider` / `StatsCommand` / `DirCommand` / `ModifiedStarDecorator` / `BoxAttributeHandler` 均为类实例 |
-| 不反向依赖内核实现 | `tools/check-layers.mjs`：插件只允许 import `@svgframe/kernel`；内核不得出现 `@svgframe/plugin-*`（除组合根） |
+| 不反向依赖内核实现 | `tools/check-layers.mjs`：插件只允许 import `@svgframe/kernel`；内核不得出现 `@svgframe/plugin-*`（除组合根）；以上两条都用"临时违规"验证过会报错 |
 | 内核与既有插件差异 = 0 | 内核侧无任何插件名硬编码（同上脚本可证）；新增插件只需新包 + 组合根两行 / 配置一项 |
 | 禁用可选扩展的缺省行为 | 基线会话与 tag `final` 逐字节一致；`stats`/`dir`/`box` 各有一条"未装时"的用例 |
-| 独立可测 | `tests/plugins/` 下 5 个文件、48 个用例，含 `dir` 的替身与真实适配器 |
+| 独立可测 | `tests/plugins/` 下 4 个文件、48 个用例，含 `dir` 的替身与真实适配器 |
 | 插件间协作 | `(box)` 与 `*` 同一行并存（`tests/plugins/decorators.test.ts`） |
 | 输出逐字节一致 | `tools/verify-assembly.mjs` 三份会话全部 ✓ |
 | 加载器四条失败路径 | `tests/plugins/loader.test.ts` |
