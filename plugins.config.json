@@ -3,6 +3,7 @@
     { "module": "@svgframe/plugin-shape-box" },
     { "module": "@svgframe/plugin-command-stats" },
     { "module": "@svgframe/plugin-command-dir" },
-    { "module": "@svgframe/plugin-tree-star" }
+    { "module": "@svgframe/plugin-tree-star" },
+    { "module": "@svgframe/plugin-shape-diamond", "options": { "fill": "#f5a623" } }
   ]
 }
