@@ -800,6 +800,49 @@ packages/vscode-svg/
 因此可以在 Node/vitest 里直接测（见 `tests/vscode/`），不需要启动 VSCode 实例。
 `extension.ts` 只是"把 `OutlineNode[]` 翻译成 `DocumentSymbol[]`"的适配层。
 
+#### 6.1.1 可复现的行为证据
+
+因为本机没有 VSCode，无法拍运行截图，所以把**纯逻辑层的真实输出**贴在这里——
+它正是 `FileDecorationProvider` / `DocumentSymbolProvider` 会拿到的数据，
+可以直接用 `node --input-type=module -e ...` 重跑：
+
+对 `packages/vscode-svg/samples/example.svg`（含嵌套 `g`、有 id 与无 id 混排、注释、自闭合标签）：
+
+```text
+svg   @3:1
+  rect#background   @4:3
+  g#frame   @5:3
+    rect#outer   @6:5
+    g#markers   @7:5
+      circle#top-left   @8:7
+      circle   @9:7
+      circle   @10:7
+  g#caption   @13:3
+    text   @14:5
+```
+
+（`@行:列` 是 1-based 展示；VSCode 内部用 0-based，`OutlineBuilder` 输出的就是 0-based。）
+
+- **层级**：`g#frame` 下的两个 `rect`/`g` 正确缩进，`g#markers` 里的三个 `circle` 再下一层；
+- **命名**：有 id 的显示 `标签名#id`，无 id 的（第 9、10 行的两个 `circle`）只显示标签名；
+- **定位**：每行后面的 `行:列` 就是点击该节点会跳到的源码位置，与文件内容逐行对应；
+- **更新**：`OutlineBuilder.build` 是纯函数（无实例状态），
+  `extension.ts` 在 `onDidChangeTextDocument` 时重新调用它即可，不需要增量补丁。
+
+徽标判定同样可复现：
+
+```text
+a.svg           badge []
+A.SVG           badge []
+a.svg.png       (no badge)
+pkg/example.svg badge []
+dir.svg/x       (no badge)
+note.txt        (no badge)
+```
+
+截图（Explorer 里的 `[]` 与 Outline 面板）仍需在装有 VSCode 的机器上补拍，
+步骤见 `packages/vscode-svg/README.md`。
+
 ### 6.2 A.3 分析
 
 #### 6.2.1 VSCode 与插件各自的职责，以及注册与调用过程
@@ -873,7 +916,7 @@ VSCode 内部保存这两个 provider 句柄
 这不是巧合：Phase 1 的解析器是为 CLI 的"整文件读入"设计的，而 VSCode 的大纲是"增量、容错、
 带位置的"场景，两者的约束不同，强行复用只会把两边都拖累。
 
-> **截图说明**：本机未安装 VSCode，无法生成真实运行截图。两个功能的验证步骤见
+> **截图说明**：本机未安装 VSCode，无法生成真实运行截图；替代证据见 §6.1.1（纯逻辑层的实际输出）。两个功能的验证步骤见
 > `packages/vscode-svg/README.md`：装 VSCode → 打开本仓库 → F5 启动 Extension Development Host →
 > 在 Explorer 里看到 `samples/example.svg` 带 `[]`、打开它后在 Outline 面板看到层级、点击定位。
 > 截图需在装有 VSCode 的机器上补拍（见 §7.7 的待补项）。

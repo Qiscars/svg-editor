@@ -100,7 +100,7 @@ pnpm --filter svgframe-vscode run build
 2. 打开 `packages/vscode-svg/samples/example.svg`，在 **Outline** 面板看到元素层级；
 3. 点击任一节点跳到对应源码；修改文件后大纲自动更新。
 
-细节见 [`packages/vscode-svg/README.md`](packages/vscode-svg/README.md)。
+细节见 [`packages/vscode-svg/README.md`](packages/vscode-svg/README.md)；没有 VSCode 时可以看 [doc/README.md §6.1.1](doc/README.md) 里纯逻辑层的实际输出（大纲层级 + 每个节点的源码位置 + 徽标判定）。
 
 ## 文档 PDF（提交用）
 
