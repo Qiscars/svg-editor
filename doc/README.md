@@ -12,7 +12,7 @@
 | Phase 2 定稿 | tag **`p2`** |
 | 实现规模（Phase 1） | 50 个源文件 · 19 条命令 · 175 个测试用例 · 47 次提交 |
 | 实现规模（Phase 2） | 4 个包（kernel / host / vscode-svg）+ 5 个插件包 · 21 条命令 · 271 个测试用例 |
-| 文档版本 | v2.1（见 §8 修订记录） |
+| 文档版本 | v2.2（见 §8 修订记录） |
 
 ---
 
@@ -560,14 +560,29 @@ io/SvgSerializer.ts             同上
 
 **教训**：这类"环境坑"不值得写进架构，但值得写进流程——因为它会重复发生。
 
-#### ⑥ 关于 VSCode 截图
+#### ⑥ 截图最终拍成了，而且它抓出一个单测抓不到的 bug
 
-本机没有安装 VSCode，因此**没有生成真实运行截图**。做法是把扩展做成"纯逻辑 + 薄适配层"，
+交付过程中本机一直没装 VSCode，所以当时的做法是：把扩展做成"纯逻辑 + 薄适配层"，
 用 vitest 覆盖纯逻辑（`tests/vscode/`），并把运行步骤写进 `packages/vscode-svg/README.md`，
-在 §7.7 里把"补截图"显式列为待补项。
+在 §7.7 里把"补截图"显式列为待补项——**不伪造截图，也不写"已验证"**，
+这是 Phase 1 §2.5 ③ 就定下的规矩。
 
-不伪造截图，也不写"已验证"——这是 Phase 1 §2.5 ③ 就定下的规矩：
-**没做到的事就标成没做到，覆盖率写成"可触发项"而不是含糊的分母**。
+后来装上 VSCode 实跑，第一次打开就暴露了一个**单测完全覆盖不到**的真 bug：
+
+- 徽标正常显示（`[]` 出来了），但 Outline 面板是空的，提示 `No symbols found in document`；
+- 根因：VSCode 内置把 `.svg` 关联到 **`xml`** 语言，并不存在内置的 `svg` 语言 id。
+  而我把 provider 注册成了 `{ language: 'svg' }` —— 它**永远不会被调用**。
+- 也就是说：`OutlineBuilder` 的 19 个用例、`fileBadge` 的 17 个用例全绿，
+  解析逻辑一个字都没错，错的是**适配层的注册条件**。
+
+修法：选择器改为 `[{ language: 'svg' }, { pattern: '**/*.svg' }, { pattern: '**/*.SVG' }]`，
+以路径为主判据；编辑刷新事件原本也用 `languageId === 'svg'` 判断（同一个坑的第二个落点），
+一并改成纯函数 `isSvgDocument(languageId, path)`，并补了 4 个用例把它钉住。
+
+**教训**：单元测试覆盖的是"纯逻辑对不对"，覆盖不了"**这段代码到底会不会被调用**"。
+边界层的注册条件、事件过滤条件、文档选择器这类"接线"，只有真的跑起来才知道。
+这也说明"纯逻辑 + 薄适配层"的分层是对的——修 bug 时只动了 3 行适配代码，
+解析器一行没碰，改完重跑测试仍然全绿。
 
 ---
 
@@ -840,8 +855,24 @@ dir.svg/x       (no badge)
 note.txt        (no badge)
 ```
 
-截图（Explorer 里的 `[]` 与 Outline 面板）仍需在装有 VSCode 的机器上补拍，
-步骤见 `packages/vscode-svg/README.md`。
+#### 6.1.2 运行截图
+
+在 VSCode 1.148 的 Extension Development Host 里实际运行（`--extensionDevelopmentPath=packages/vscode-svg`，工作区为 `packages/vscode-svg/samples`）：
+
+![Explorer 中 svg 文件行尾的方括号徽标](images/vscode-badge.png)
+
+*图 1：Explorer 里 `example.svg` 行尾的 `[]` 徽标。徽标本体很小，这里**只按 Explorer 区域裁剪并放大 3 倍**，未做别的修改；原图见 `images/vscode-badge-raw.png`。*
+
+![原生 Outline 显示层级并支持点击定位](images/vscode-outline.png)
+
+*图 2：原生 Outline 展示元素层级（`svg → g#frame → g#markers → circle…`，有 id 显示 `标签名#id`、无 id 只显示标签名）；选中 `g#markers` 后，右侧代码区第 7–10 行同步高亮，即"点击节点定位到源码"。*
+
+**踩到的坑（已修）**：VSCode 内置把 `.svg` 关联到 **`xml`** 语言，并没有内置的 `svg` 语言 id。
+最初把 provider 注册成 `{ language: 'svg' }`，结果 Outline 一直显示
+`No symbols found in document`——徽标正常（与语言无关），大纲永远为空。
+现在选择器改成 `[{ language: 'svg' }, { pattern: '**/*.svg' }, { pattern: '**/*.SVG' }]`，
+路径成为主判据；纯逻辑层对应新增 `isSvgDocument(languageId, path)` 并补了用例。
+这正是"单元测试全绿但界面上没效果"的典型：纯逻辑没问题，**适配层的注册条件错了**。
 
 ### 6.2 A.3 分析
 
@@ -916,10 +947,8 @@ VSCode 内部保存这两个 provider 句柄
 这不是巧合：Phase 1 的解析器是为 CLI 的"整文件读入"设计的，而 VSCode 的大纲是"增量、容错、
 带位置的"场景，两者的约束不同，强行复用只会把两边都拖累。
 
-> **截图说明**：本机未安装 VSCode，无法生成真实运行截图；替代证据见 §6.1.1（纯逻辑层的实际输出）。两个功能的验证步骤见
-> `packages/vscode-svg/README.md`：装 VSCode → 打开本仓库 → F5 启动 Extension Development Host →
-> 在 Explorer 里看到 `samples/example.svg` 带 `[]`、打开它后在 Outline 面板看到层级、点击定位。
-> 截图需在装有 VSCode 的机器上补拍（见 §7.7 的待补项）。
+> **运行验证**：已在 VSCode 1.148 的 Extension Development Host 里实跑并截图，见 §6.1.2
+> （徽标 + 大纲定位两张图）；纯逻辑层的可重跑证据见 §6.1.1。
 
 ---
 
@@ -1194,7 +1223,7 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | 拓展任务 | **已做**：`diamond` 插件（菱形复合图形，容器 + `<polygon>`，支持 `options.fill`），见 §7.8 |
 | 双装配差异判据 | 见 §7.8 的两个演示提交与逐行差异 |
 
-**待补项**：VSCode 扩展运行截图两张（本机未装 VSCode）。步骤见 `packages/vscode-svg/README.md`。
+**截图**：两张运行截图已补齐（§6.1.2，VSCode 1.148 实跑）。`packages/vscode-svg/README.md` 里保留了复现步骤。
 
 ### 7.8 方式 A / 方式 B 的差异判据证据
 
@@ -1264,3 +1293,4 @@ M	plugins.config.json                                 ← 唯一改动，零运�
 | v1.6 | `docs(diagrams): 渲染组件图并嵌入 §1.1` | **§1.1 补图**：原方案只有一段 PlantUML 源码，而作业要求"附一张图"，源码块不算图。新增 `doc/diagrams/component.puml`（图源）与渲染产物 `component.png` / `component.svg`（PlantUML 1.2024.7 实际渲染），§1.1 改为嵌入渲染图、源码收进折叠块。**同时修正抬头**：文档版本号此前仍停留在 v1（v1.1–v1.5 都没同步），并补上代码仓库地址与 tag `final` 的说明 |
 | v2.0 | `feat(plugins): 四个扩展点的插件实现 + 双装配与加载器` | **Phase 2 成文**：新增 §6（VSCode 插件实践，含 A.3 的职责划分、Decorator/Adapter 辨析、Phase 1 复用评估）与 §7（四个扩展点清单、两种装配方式、重构前后架构图、5 条 ADR、`dir` 的适配器模式、指标、验收对照）；§2 新增 2.6 记录 Phase 2 的真实返工（层次检查器抓出 6 处循环依赖后改架构而非放宽规则、加载器两个真缺陷被测试逼出、banner 差点破坏逐字节一致、`Document.registerTree` 的半成品索引、PowerShell 的 BOM 与引号坑、VSCode 截图未拍的处置）。**架构变化**：拆成 kernel / host / vscode-svg 三类包 + 4 个插件包，`extensions` 收敛为纯契约层，组合根是唯一认识具体插件的文件 |
 | v2.1 | `feat(plugin): 新增 diamond 图形插件（方式 A：代码装配）` | **补齐 §6 的差异判据**：原文判据要求"接入新插件的那次提交不改内核与既有插件"，而 `box` 当初是与内核钩子同一个提交落地的，无法自证。新增拓展任务插件 `diamond`（菱形：容器 + `<polygon>`），用两个提交分别证明两条路径——`38cc6ff` 只改组合根一行（方式 A），`070c87d` 只改 `plugins.config.json`（方式 B），逐行差异见新增的 §7.8。**另修**：`box` 少了一个模板默认填充 `#4a90d9`，导致 Phase 1 §6.1 版本 B 的会话只能"语义一致"而不能逐行复现；补齐后新增第四项门禁检查（只装 `shape-box` 跑该会话对拍 golden，34 行全过），并把与规范正文的两类差异（列宽不自洽、线段 `stroke` 省略）列明 |
+| v2.2 | `fix(vscode): 大纲 provider 按路径匹配，修复 .svg 被当作 xml 语言导致 Outline 为空` | **截图补齐 + 抓出真 bug**：装上 VSCode 实跑后，徽标正常但 Outline 一直是 `No symbols found in document`。根因是 VSCode 内置把 `.svg` 关联到 `xml` 语言，而 provider 只注册了 `{ language: 'svg' }`，永远不会被调用——单元测试（36 例纯逻辑）全绿却完全覆盖不到这类"接线"错误。修法：选择器改为 `[{ language: 'svg' }, { pattern: '**/*.svg' }, { pattern: '**/*.SVG' }]`，编辑刷新改用纯函数 `isSvgDocument(languageId, path)`（同一个坑的第二个落点），补 4 个用例。**新增 §6.1.2**：徽标与大纲定位两张真实运行截图（徽标图按 Explorer 区域裁剪放大 3 倍，原图一并入库）；§2.6 ⑥ 改写为这次的真实经过与教训；§7.7 的"待补项"随之消除 |
