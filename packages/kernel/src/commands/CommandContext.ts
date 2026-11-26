@@ -27,4 +27,19 @@ export class CommandContext {
   requireContainer(id: string): Container {
     return this.document.requireContainer(id);
   }
+
+  /**
+   * 结构守卫：把 `shape` 从它当前父节点上摘走之前必须先过这一关。
+   *
+   * 内核不认识任何具体类型，只问父节点所属的 `ShapeProvider` 是否声明了
+   * `guardChildRemoval`。复合图形（如 box）借此拒绝"少一个必要子部件"的请求。
+   */
+  assertDetachable(shape: Shape): void {
+    const parent = shape.parent;
+    if (parent === null) {
+      return;
+    }
+    const provider = this.services.shapes.find(parent.dataKind ?? parent.kind);
+    provider?.guardChildRemoval?.(parent, shape);
+  }
 }

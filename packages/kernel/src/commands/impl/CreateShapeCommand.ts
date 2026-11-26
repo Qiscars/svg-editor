@@ -32,8 +32,11 @@ export class CreateShapeCommand extends DocumentCommand {
   execute(): string {
     this.document.attach(this.parent, this.shape);
     const where = this.atRoot ? '' : ` in ${this.parent.describeRef()}`;
-    // 复合图形（插件构造的子树）把内部结构一并报出来，便于确认子部件 id 的派生结果
-    const parts = this.shape.children.map((child) => child.describeRef()).join(' + ');
+    // 复合图形（插件构造的子树）把内部结构一并报出来，便于确认子部件 id 的派生结果；
+    // 首个元素是它自己的树内引用，例如 box#n1 created (g#n1 + rect#n1-rect + text#n1-label)
+    const childRefs = this.shape.children.map((child) => child.describeRef());
+    const parts = (this.shape.dataKind === undefined ? childRefs : [this.shape.describeTreeRef(), ...childRefs])
+      .join(' + ');
     return parts === ''
       ? `${this.shape.describeRef()} created${where}`
       : `${this.shape.describeRef()} created${where} (${parts})`;

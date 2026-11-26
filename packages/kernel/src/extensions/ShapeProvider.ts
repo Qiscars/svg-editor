@@ -48,4 +48,12 @@ export interface ShapeProvider {
    * 返回的图形会替换掉临时的容器。只有 `composite` 类型需要实现。
    */
   restore?(context: ReadBackContext): Shape;
+
+  /**
+   * 子部件守卫：普通命令（delete / addto / group）想把子节点从该图形上摘走时调用。
+   *
+   * 抛错即拒绝该命令。复合图形的内部结构归插件所有，插件可以借此保证不变量；
+   * 不实现表示"可以随意摘走"。
+   */
+  guardChildRemoval?(parent: Shape, child: Shape): void;
 }

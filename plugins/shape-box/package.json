@@ -1,0 +1,31 @@
+{
+  "name": "@svgframe/plugin-shape-box",
+  "version": "0.2.0",
+  "private": true,
+  "description": "box 图形插件：带标题的矩形框（复合图形）",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "contributes": {
+    "shapes": ["box"],
+    "attributes": ["box-attributes"],
+    "decorators": ["box-type-label"]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@svgframe/kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@svgframe/kernel": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

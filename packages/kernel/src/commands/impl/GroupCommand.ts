@@ -43,6 +43,10 @@ export class GroupCommand extends DocumentCommand {
     }
 
     const children = ids.map((id) => context.require(id));
+    // 收编会把图形从原父容器摘下，逐个过结构守卫
+    for (const child of children) {
+      context.assertDetachable(child);
+    }
 
     // 同时选中一个容器和它自己的子孙：合并后会形成环，必须拒绝。
     // contains() 是 Composite 语义，这里是多态的，不需要 instanceof。

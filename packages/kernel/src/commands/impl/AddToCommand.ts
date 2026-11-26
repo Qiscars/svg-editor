@@ -28,6 +28,8 @@ export class AddToCommand extends DocumentCommand {
     if (parent === null) {
       throw new Error(`internal: shape ${id} has no parent`);
     }
+    // 移出原父容器前先过结构守卫
+    context.assertDetachable(this.shape);
     this.originParent = parent;
     this.originIndex = parent.indexOf(this.shape);
   }

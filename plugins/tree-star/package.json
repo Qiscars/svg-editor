@@ -1,0 +1,29 @@
+{
+  "name": "@svgframe/plugin-tree-star",
+  "version": "0.2.0",
+  "private": true,
+  "description": "modified-star 树标签插件：为自上次保存以来改动的行追加 *",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "contributes": {
+    "decorators": ["modified-star"]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@svgframe/kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@svgframe/kernel": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

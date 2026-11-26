@@ -25,6 +25,8 @@ export class DeleteShapeCommand extends DocumentCommand {
     if (parent === null) {
       throw new Error(`internal: indexed shape ${id} has no parent`);
     }
+    // 复合图形的必要子部件不允许被单独删除
+    context.assertDetachable(shape);
     this.shape = shape;
     this.parent = parent;
     this.index = parent.indexOf(shape);

@@ -29,6 +29,18 @@ importers:
       '@svgframe/kernel':
         specifier: workspace:*
         version: link:../kernel
+      '@svgframe/plugin-command-dir':
+        specifier: workspace:*
+        version: link:../../plugins/command-dir
+      '@svgframe/plugin-command-stats':
+        specifier: workspace:*
+        version: link:../../plugins/command-stats
+      '@svgframe/plugin-shape-box':
+        specifier: workspace:*
+        version: link:../../plugins/shape-box
+      '@svgframe/plugin-tree-star':
+        specifier: workspace:*
+        version: link:../../plugins/tree-star
     devDependencies:
       '@types/node':
         specifier: ^26.6.5
@@ -39,6 +51,54 @@ importers:
 
   packages/kernel:
     devDependencies:
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  plugins/command-dir:
+    devDependencies:
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  plugins/command-stats:
+    devDependencies:
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  plugins/shape-box:
+    devDependencies:
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  plugins/tree-star:
+    devDependencies:
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5

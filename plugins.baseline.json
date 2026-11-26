@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    { "module": "@svgframe/plugin-shape-box", "enabled": false },
+    { "module": "@svgframe/plugin-command-stats", "enabled": false },
+    { "module": "@svgframe/plugin-command-dir", "enabled": false },
+    { "module": "@svgframe/plugin-tree-star", "enabled": false }
+  ]
+}

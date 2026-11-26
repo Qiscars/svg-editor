@@ -19,7 +19,11 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@svgframe/kernel": "workspace:*"
+    "@svgframe/kernel": "workspace:*",
+    "@svgframe/plugin-command-dir": "workspace:*",
+    "@svgframe/plugin-command-stats": "workspace:*",
+    "@svgframe/plugin-shape-box": "workspace:*",
+    "@svgframe/plugin-tree-star": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

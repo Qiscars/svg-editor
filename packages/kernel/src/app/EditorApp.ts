@@ -208,6 +208,6 @@ export class EditorApp {
     this.contextValue = new CommandContext(document, this.services);
     // 旧命令指向的是已经不在编辑器里的图形，历史必须整体作废
     this.historyValue.reset();
-    this.services.decorators.notifyChanged(document);
+    this.services.decorators.notifyLoaded(document);
   }
 }

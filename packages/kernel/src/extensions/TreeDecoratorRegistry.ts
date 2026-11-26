@@ -54,6 +54,12 @@ export class TreeDecoratorRegistry {
     }
   }
 
+  notifyLoaded(document: Document): void {
+    for (const decorator of this.decorators) {
+      decorator.onDocumentLoaded?.(document);
+    }
+  }
+
   list(): readonly TreeDecorator[] {
     return [...this.decorators];
   }

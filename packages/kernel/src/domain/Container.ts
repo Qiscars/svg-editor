@@ -28,6 +28,10 @@ export class Container extends Shape {
     return this.childrenList;
   }
 
+  override isContainer(): boolean {
+    return true;
+  }
+
   get childCount(): number {
     return this.childrenList.length;
   }

@@ -32,4 +32,7 @@ export interface TreeDecorator {
 
   /** 文档保存成功时通知。 */
   onDocumentSaved?(document: Document): void;
+
+  /** 换上新文档（`init` / `read`）时通知；此时内容与磁盘一致，可作为干净基线。 */
+  onDocumentLoaded?(document: Document): void;
 }

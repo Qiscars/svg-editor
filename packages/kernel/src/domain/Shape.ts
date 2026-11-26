@@ -78,6 +78,16 @@ export abstract class Shape {
   }
 
   /**
+   * 是否为容器类节点。
+   *
+   * 用"能否有子节点"作为判据，而不是判断 children.length > 0——
+   * 空容器仍然是容器。这样统计、遍历等功能不必知道具体类型名。
+   */
+  isContainer(): boolean {
+    return false;
+  }
+
+  /**
    * 是否包含自身或子孙（Composite 语义）。
    * 叶子只能包含自己；容器覆盖为递归判断。
    */

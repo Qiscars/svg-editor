@@ -1,0 +1,29 @@
+{
+  "name": "@svgframe/plugin-command-stats",
+  "version": "0.2.0",
+  "private": true,
+  "description": "stats 命令插件：按图形类型统计叶子数量",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "contributes": {
+    "commands": ["stats"]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@svgframe/kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@svgframe/kernel": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

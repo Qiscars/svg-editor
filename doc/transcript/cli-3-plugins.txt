@@ -1,0 +1,10 @@
+# 新增命令会话：stats 与 dir（dir 在内容固定的工作目录里执行）
+init 400 200
+create rect r1 10 10 100 50 #4a90d9
+create circle c1 200 60 20
+create text t1 20 150 "hello"
+create g grp
+addto grp c1
+stats
+
+dir
