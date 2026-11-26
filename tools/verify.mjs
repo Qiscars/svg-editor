@@ -11,14 +11,14 @@
  * 退出码 0 = 全部通过。
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** 需要构建的 workspace 包（各自带 typescript 依赖）。 */
-const PACKAGES = [
+/** 所有参与构建的 workspace 包（顺序由依赖关系算出来，不写死）。 */
+const CANDIDATE_DIRS = [
   'packages/kernel',
   'packages/host',
   'packages/vscode-svg',
@@ -28,6 +28,63 @@ const PACKAGES = [
   'plugins/command-dir',
   'plugins/tree-star',
 ];
+
+/**
+ * 按 workspace 依赖关系做拓扑排序。
+ *
+ * **这一步不是可有可无的**：`packages/host` 的组合根要 `import` 五个插件包，
+ * 而它们的 `types` 指向各自的 `dist/index.d.ts`。冷构建（`dist` 全空）时
+ * 必须先建插件、再建宿主，否则 `tsc` 会报
+ * `Cannot find module '@svgframe/plugin-…'`。
+ *
+ * `pnpm -r run build` 本身按依赖图排序，所以这个问题只在"用 Node 直接串行
+ * 调 tsc"时才会暴露——`tools/verify.mjs` 最初就踩了这个坑。
+ */
+function buildOrder(dirs) {
+  const nameOf = new Map();
+  const depsOf = new Map();
+  for (const dir of dirs) {
+    const pkg = JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8'));
+    nameOf.set(dir, pkg.name);
+    const all = { ...pkg.peerDependencies, ...pkg.dependencies, ...pkg.devDependencies };
+    depsOf.set(
+      dir,
+      Object.entries(all)
+        .filter(([, version]) => String(version).startsWith('workspace:'))
+        .map(([name]) => name),
+    );
+  }
+
+  const byName = new Map();
+  for (const dir of dirs) {
+    byName.set(nameOf.get(dir), dir);
+  }
+
+  const sorted = [];
+  const visiting = new Set();
+  const done = new Set();
+  const visit = (dir) => {
+    if (done.has(dir) || visiting.has(dir)) {
+      return; // visiting 命中即为环，直接跳过（本仓库不存在）
+    }
+    visiting.add(dir);
+    for (const depName of depsOf.get(dir) ?? []) {
+      const depDir = byName.get(depName);
+      if (depDir !== undefined) {
+        visit(depDir);
+      }
+    }
+    visiting.delete(dir);
+    done.add(dir);
+    sorted.push(dir);
+  };
+  for (const dir of dirs) {
+    visit(dir);
+  }
+  return sorted;
+}
+
+const PACKAGES = buildOrder(CANDIDATE_DIRS);
 
 const results = [];
 
