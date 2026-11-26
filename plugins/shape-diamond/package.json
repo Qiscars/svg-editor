@@ -1,0 +1,29 @@
+{
+  "name": "@svgframe/plugin-shape-diamond",
+  "version": "0.2.0",
+  "private": true,
+  "description": "diamond 图形插件（拓展任务）：菱形复合图形，演示 options 与零内核改动接入",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "contributes": {
+    "shapes": ["diamond", "polygon"]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@svgframe/kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@svgframe/kernel": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

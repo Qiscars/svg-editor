@@ -25,6 +25,7 @@
     "@svgframe/plugin-command-dir": "workspace:*",
     "@svgframe/plugin-command-stats": "workspace:*",
     "@svgframe/plugin-shape-box": "workspace:*",
+    "@svgframe/plugin-shape-diamond": "workspace:*",
     "@svgframe/plugin-tree-star": "workspace:*",
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",

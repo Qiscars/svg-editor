@@ -1,4 +1,5 @@
 import shapeBox from '@svgframe/plugin-shape-box';
+import shapeDiamond from '@svgframe/plugin-shape-diamond';
 import commandDir from '@svgframe/plugin-command-dir';
 import commandStats from '@svgframe/plugin-command-stats';
 import treeStar from '@svgframe/plugin-tree-star';
@@ -18,7 +19,7 @@ import { createServicesWithBuiltins } from './Composition.js';
  * 它与配置装配（`--config plugins.config.json`）共用 `activatePlugin`，
  * 因此两条路径的校验与回滚行为完全一致。
  */
-const PLUGINS: readonly SvgFramePlugin<EditorApp>[] = [shapeBox, commandStats, commandDir, treeStar];
+const PLUGINS: readonly SvgFramePlugin<EditorApp>[] = [shapeBox, shapeDiamond, commandStats, commandDir, treeStar];
 
 export interface CodeAssemblyResult extends Composition {
   readonly errors: readonly string[];
