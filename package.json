@@ -17,7 +17,7 @@
     "check:layers": "node tools/check-layers.mjs",
     "metrics": "node tools/metrics.mjs",
     "verify:assembly": "node tools/verify-assembly.mjs",
-    "verify": "pnpm run build && pnpm run typecheck && pnpm test && pnpm run check:layers && node tools/verify-assembly.mjs"
+    "verify": "node tools/verify.mjs"
   },
   "devDependencies": {
     "@svgframe/host": "workspace:*",

@@ -80,7 +80,7 @@ node packages/host/dist/main.js --config plugins.baseline.json     # 禁用全�
 | `pnpm run check:layers` | 检查依赖方向是否符合架构规则 |
 | `pnpm run metrics` | 重新生成 `docs/metrics/metrics.md` |
 | `node tools/verify-assembly.mjs` | 双装配逐字节对拍 + Phase 1 基线回归 |
-| `pnpm run verify` | 上面几条一次跑完（提交前的门禁） |
+| `pnpm run verify` | 上面几条一次跑完（提交前的门禁）。等价于 `node tools/verify.mjs`，**不依赖 `pnpm` 在 PATH 上**，只调用各包内已有的二进制 |
 
 ## 环境
 

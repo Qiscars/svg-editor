@@ -1198,6 +1198,7 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | `node tools/verify-assembly.mjs` | 三份会话在两种装配下逐字节对拍 + 基线回归 |
 | `node tools/check-layers.mjs` | 架构约束：内核分层、插件只依赖内核公开 API、"除组合根外不得 import 插件"、VSCode 扩展的纯逻辑层不得 import `vscode` |
 | `node tools/metrics.mjs` | 重新生成指标 |
+| `node tools/verify.mjs` | 上面五条一次跑完（`pnpm run verify` 等价）。用 Node 直接调用各包二进制，不依赖 `pnpm` 在 PATH 上，解压即可自证 |
 | `npm run build && npm test` | 构建与全部用例 |
 
 **会话记录**：`doc/transcript/cli-1.txt`（Phase 1 基础）、`cli-2-box.txt`（box）、
