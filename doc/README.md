@@ -11,8 +11,8 @@
 | Phase 1 定稿 | tag **`final`**（`git checkout final` 即拿到阶段一定稿状态） |
 | Phase 2 定稿 | tag **`p2`** |
 | 实现规模（Phase 1） | 50 个源文件 · 19 条命令 · 175 个测试用例 · 47 次提交 |
-| 实现规模（Phase 2） | 4 个包（kernel / host / vscode-svg）+ 4 个插件包 · 21 条命令 · 259 个测试用例 |
-| 文档版本 | v2.0（见 §8 修订记录） |
+| 实现规模（Phase 2） | 4 个包（kernel / host / vscode-svg）+ 5 个插件包 · 21 条命令 · 271 个测试用例 |
+| 文档版本 | v2.1（见 §8 修订记录） |
 
 ---
 
@@ -895,7 +895,7 @@ VSCode 内部保存这两个 provider 句柄
 |---|---|
 | 职责 | 声明一种图形：类型名、`create` 的位置参数、序列化标签与 `data-kind`、是否为不可拆开的复合图形、如何构造与读回 |
 | 内核调用位置 | `extensions/ShapeRegistry.ts` → `register / unregister / require / forTag / forDataKind / isComposite`；`io/SvgParser.ts` → `providerFor`、`instantiate`；`io/SvgSerializer.ts` → `tagNameOf`；`app/EditorApp.ts` → `createShape`；`commands/impl/UngroupCommand.ts` → 构造函数里的 `composite` 判定；`commands/CommandContext.ts` → `assertDetachable` 调用 `guardChildRemoval` |
-| 已有实现 | 内置六种（`builtin/BuiltinShapes.ts`，走同一注册路径）；插件 `box`（`plugins/shape-box/src/BoxShapeProvider.ts`） |
+| 已有实现 | 内置六种（`builtin/BuiltinShapes.ts`，走同一注册路径）；插件 `box`（`plugins/shape-box`）与 `diamond`（`plugins/shape-diamond`，拓展任务） |
 | 禁用可选扩展时的行为 | 只剩内置六种：`create box …` → `error: unknown shape type: box (is the plugin loaded?)`；`read` 带 `data-kind="box"` 的文件 → 降级为普通 `g`（结构完整、无 `(box)` 标签、不参与 box 语义），保存时不写 `data-kind` |
 | 违反契约时的报错 | 类型名重复 → `error: duplicate registration: shapes/<kind>`；`restore` 抛错 → `error: invalid SVG: …`，**整份读入被拒绝且原文档不变**；`build` 抛错 → 命令失败、不进 undo 栈 |
 | 独立测试 | `tests/plugins/box.test.ts`（13 例，含降级、缺子部件、id 冲突、守卫） |
@@ -1140,7 +1140,7 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | 四个扩展点接口在内核侧 | §7.1 四张表 + `packages/kernel/src/extensions/` |
 | 以类实现扩展点 | `BoxShapeProvider` / `StatsCommand` / `DirCommand` / `ModifiedStarDecorator` / `BoxAttributeHandler` 均为类实例 |
 | 不反向依赖内核实现 | `tools/check-layers.mjs`：插件只允许 import `@svgframe/kernel`；内核不得出现 `@svgframe/plugin-*`（除组合根）；以上两条都用"临时违规"验证过会报错 |
-| 内核与既有插件差异 = 0 | 内核侧无任何插件名硬编码（同上脚本可证）；新增插件只需新包 + 组合根两行 / 配置一项 |
+| 内核与既有插件差异 = 0 | 见 §7.8 的两个演示提交：新增 `diamond` 插件时，`git diff --name-status` 里唯一的运行代码改动是组合根一行 |
 | 禁用可选扩展的缺省行为 | 基线会话与 tag `final` 逐字节一致；`stats`/`dir`/`box` 各有一条"未装时"的用例 |
 | 独立可测 | `tests/plugins/` 下 4 个文件、48 个用例，含 `dir` 的替身与真实适配器 |
 | 插件间协作 | `(box)` 与 `*` 同一行并存（`tests/plugins/decorators.test.ts`） |
@@ -1148,9 +1148,63 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | 加载器四条失败路径 | `tests/plugins/loader.test.ts` |
 | `dir` 适配器模式 | §7.5 + 替身/真实两套用例 |
 | 指标 | `docs/metrics/metrics.md` |
-| 拓展任务 | 未做（时间用于把主线的验收证据做扎实） |
+| 拓展任务 | **已做**：`diamond` 插件（菱形复合图形，容器 + `<polygon>`，支持 `options.fill`），见 §7.8 |
+| 双装配差异判据 | 见 §7.8 的两个演示提交与逐行差异 |
 
 **待补项**：VSCode 扩展运行截图两张（本机未装 VSCode）。步骤见 `packages/vscode-svg/README.md`。
+
+### 7.8 方式 A / 方式 B 的差异判据证据
+
+§6 的判据是"设 `C` 为接入新插件的那次提交，`git diff --name-status C^ C` 里
+运行代码只允许一种改动形态"。为把这条判据变成可核验的事实，我们新增了一个
+**拓展任务插件 `diamond`**（菱形：容器 + `<polygon>` 子部件），并用两个提交分别证明两条路径。
+
+**方式 A 的提交 `38cc6ff`**
+
+```text
+$ git diff --name-status 38cc6ff^ 38cc6ff
+M	package.json                                       ← 依赖元数据（供根测试解析）
+M	packages/host/package.json                          ← 依赖元数据
+M	packages/host/src/assembly/PluginComposition.ts     ← 唯一的运行代码改动
+A	plugins/shape-diamond/package.json
+A	plugins/shape-diamond/src/DiamondShape.ts
+A	plugins/shape-diamond/src/DiamondShapeProvider.ts
+A	plugins/shape-diamond/src/PolygonShape.ts
+A	plugins/shape-diamond/src/index.ts
+A	plugins/shape-diamond/tsconfig.json
+M	pnpm-lock.yaml                                     ← 锁文件
+```
+
+内核、加载器、既有插件**零改动**。`diamond` 用到的全是既有机制：
+`ShapeProvider` 注册、`data-kind` 复合图形、严格读回还原、`guardChildRemoval`、
+`PluginContext.options`。
+
+**方式 B 的提交 `070c87d`**
+
+```text
+$ git diff --name-status 070c87d^ 070c87d
+M	plugins.config.json                                 ← 唯一改动，零运行代码
+```
+
+配置里顺带演示 `options` 的传递：
+
+```json
+{ "module": "@svgframe/plugin-shape-diamond", "options": { "fill": "#f5a623" } }
+```
+
+`create diamond d2 50 50 120 80` 之后 `show d2-poly` 会多一行 `fill=#f5a623`；
+不写 `options` 则没有这一行（`tests/plugins/diamond.test.ts` 两向都覆盖）。
+
+**判据完整性的如实说明**：§6 要求同一次提交里既"新增插件"又满足对应形态。本仓库是
+线性分支，插件包只能在其中一个提交里首次落地，因此按 §6「A/B 可用两个独立演示分支
+或提交分别证明」的允许，用上面两个提交拼出完整证明：`38cc6ff` 给出方式 A 的差异形态，
+`070c87d` 给出方式 B 的差异形态。
+
+**零内核改动的另一种可执行证据**：`tools/check-layers.mjs` 里有一条规则——
+除组合根 `assembly/PluginComposition.ts` 外，任何文件都不得 import `@svgframe/plugin-*`
+（含内核与既有插件）。这条规则用"临时违规"验证过会报错，因此"内核不认识任何插件"
+不是靠阅读代码得出的印象，而是每次门禁都会重新检查的断言。
+
 
 ---
 
@@ -1166,3 +1220,4 @@ node packages/host/dist/main.js --config plugins.baseline.json < doc/transcript/
 | v1.5 | `docs: 过程记录定稿与修订记录` | **§2.5 成文**：记录收尾阶段的三件事——依赖检查抓到 12 处 `cli → commands` 违规时的三个候选取舍、XML 转义规则上的测试假设被推翻、作业 §4.2 第 6 条在本阶段无法触发的处理方式，以及计划外多出提交 `#26a` 的登记方式。本节（§8）登记 v1.4 的 10 项模块偏差 |
 | v1.6 | `docs(diagrams): 渲染组件图并嵌入 §1.1` | **§1.1 补图**：原方案只有一段 PlantUML 源码，而作业要求"附一张图"，源码块不算图。新增 `doc/diagrams/component.puml`（图源）与渲染产物 `component.png` / `component.svg`（PlantUML 1.2024.7 实际渲染），§1.1 改为嵌入渲染图、源码收进折叠块。**同时修正抬头**：文档版本号此前仍停留在 v1（v1.1–v1.5 都没同步），并补上代码仓库地址与 tag `final` 的说明 |
 | v2.0 | `feat(plugins): 四个扩展点的插件实现 + 双装配与加载器` | **Phase 2 成文**：新增 §6（VSCode 插件实践，含 A.3 的职责划分、Decorator/Adapter 辨析、Phase 1 复用评估）与 §7（四个扩展点清单、两种装配方式、重构前后架构图、5 条 ADR、`dir` 的适配器模式、指标、验收对照）；§2 新增 2.6 记录 Phase 2 的真实返工（层次检查器抓出 6 处循环依赖后改架构而非放宽规则、加载器两个真缺陷被测试逼出、banner 差点破坏逐字节一致、`Document.registerTree` 的半成品索引、PowerShell 的 BOM 与引号坑、VSCode 截图未拍的处置）。**架构变化**：拆成 kernel / host / vscode-svg 三类包 + 4 个插件包，`extensions` 收敛为纯契约层，组合根是唯一认识具体插件的文件 |
+| v2.1 | `feat(plugin): 新增 diamond 图形插件（方式 A：代码装配）` | **补齐 §6 的差异判据**：原文判据要求"接入新插件的那次提交不改内核与既有插件"，而 `box` 当初是与内核钩子同一个提交落地的，无法自证。新增拓展任务插件 `diamond`（菱形：容器 + `<polygon>`），用两个提交分别证明两条路径——`38cc6ff` 只改组合根一行（方式 A），`070c87d` 只改 `plugins.config.json`（方式 B），逐行差异见新增的 §7.8。**另修**：`box` 少了一个模板默认填充 `#4a90d9`，导致 Phase 1 §6.1 版本 B 的会话只能"语义一致"而不能逐行复现；补齐后新增第四项门禁检查（只装 `shape-box` 跑该会话对拍 golden，34 行全过），并把与规范正文的两类差异（列宽不自洽、线段 `stroke` 省略）列明 |

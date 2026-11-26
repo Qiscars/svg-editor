@@ -67,7 +67,7 @@ node packages/host/dist/main.js --config plugins.baseline.json     # 禁用全�
 | 插件提供 | `stats`、`dir` |
 
 `create` 的内置类型：`rect` / `circle` / `ellipse` / `line` / `text` / `g`；
-插件 `shape-box` 追加 `box`（带标题的矩形框，复合图形）。
+插件 `shape-box` 追加 `box`（带标题的矩形框，复合图形），`shape-diamond` 追加 `diamond`（菱形，拓展任务）。
 
 ## 脚本
 
@@ -135,10 +135,11 @@ svg-editor/
 │   ├── kernel/             # 内核：domain / commands / io / app / extensions / builtin
 │   ├── host/               # 宿主：cli（解析、渲染、命令表）+ loader + assembly（装配）
 │   └── vscode-svg/         # VSCode 扩展：纯逻辑 + 薄适配层
-├── plugins/                # 四个插件包：shape-box / command-stats / command-dir / tree-star
+├── plugins/                # 五个插件包：shape-box / shape-diamond / command-stats / command-dir / tree-star
 ├── tests/                  # 单元测试 + 场景回放 + 插件测试 + 扩展的纯逻辑测试
 ├── tools/                  # 架构约束检查、指标、双装配对拍、文档构建
 ├── plugins.config.json     # 配置装配的插件清单
+├── plugins.box-only.json   # 只装 shape-box（§6.1 复现用）
 ├── plugins.baseline.json   # 禁用全部可选插件（Phase 1 基线）
 ├── pnpm-workspace.yaml
 └── tsconfig.base.json
@@ -151,7 +152,7 @@ svg-editor/
 | 项 | 值 |
 |---|---|
 | 类型检查 | 0 错误（`strict` + `noUncheckedIndexedAccess` + `noImplicitOverride`） |
-| 测试 | 259 个用例 / 19 个文件，全部通过 |
+| 测试 | 271 个用例 / 20 个文件，全部通过 |
 | 架构约束 | `check-layers` 违规 0 处（含"除组合根外不得 import 插件"） |
 | 双装配一致性 | 三份会话在代码装配 / 配置装配下输出逐字节一致 |
 | Phase 1 基线 | 禁用全部可选插件后与 tag `final` 的 golden 逐字节一致 |
