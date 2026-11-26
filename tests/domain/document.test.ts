@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { Container } from '../../src/domain/Container.js';
-import { Document } from '../../src/domain/Document.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
+import { Container } from '@svgframe/kernel';
+import { Document } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
 
 describe('id 索引与唯一性', () => {
   it('挂载后可按 id 取回', () => {

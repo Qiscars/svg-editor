@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { Document } from '../../src/domain/Document.js';
-import { Container } from '../../src/domain/Container.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Ellipse } from '../../src/domain/leaf/Ellipse.js';
-import { Line } from '../../src/domain/leaf/Line.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
-import { TextShape } from '../../src/domain/leaf/TextShape.js';
-import { SvgParser } from '../../src/io/SvgParser.js';
-import { SvgSerializer } from '../../src/io/SvgSerializer.js';
+import { Document } from '@svgframe/kernel';
+import { Container } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Ellipse } from '@svgframe/kernel';
+import { Line } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { TextShape } from '@svgframe/kernel';
+import { SvgParser } from '@svgframe/kernel';
+import { SvgSerializer } from '@svgframe/kernel';
 import { snapshotDocument } from '../helpers/snapshot.js';
+import { createTestServices } from '../helpers/kernel.js';
 
 /** 一份用到了全部六种图形、且带嵌套与样式的文档。 */
 function richDocument(): Document {
@@ -48,8 +49,8 @@ function richDocument(): Document {
 }
 
 describe('save → read 往返', () => {
-  const serializer = new SvgSerializer();
-  const parser = new SvgParser();
+  const serializer = new SvgSerializer(createTestServices().shapes);
+  const parser = new SvgParser(createTestServices().shapes);
 
   it('整棵树的结构与属性在往返后完全不变', () => {
     const original = richDocument();
@@ -112,7 +113,7 @@ describe('save → read 往返', () => {
 });
 
 describe('外部 SVG 的兼容性', () => {
-  const parser = new SvgParser();
+  const parser = new SvgParser(createTestServices().shapes);
 
   it('缺 id 的元素按「标签名 + 序号」补名并产生 warning', () => {
     const result = parser.parse(`<svg width="100" height="100">
@@ -168,7 +169,7 @@ describe('外部 SVG 的兼容性', () => {
 });
 
 describe('非法 SVG 的报错', () => {
-  const parser = new SvgParser();
+  const parser = new SvgParser(createTestServices().shapes);
 
   it('根元素不是 svg', () => {
     expect(() => parser.parse('<html/>')).toThrowError('invalid SVG: root element is <html>, expected <svg>');

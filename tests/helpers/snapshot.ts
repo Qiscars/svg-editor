@@ -1,5 +1,5 @@
-import type { Document } from '../../src/domain/Document.js';
-import type { Shape } from '../../src/domain/Shape.js';
+import type { Document } from '@svgframe/kernel';
+import type { Shape } from '@svgframe/kernel';
 
 export interface ShapeRecord {
   readonly id: string;

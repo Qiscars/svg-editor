@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { Container } from '../../src/domain/Container.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Ellipse } from '../../src/domain/leaf/Ellipse.js';
-import { Line } from '../../src/domain/leaf/Line.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
-import { TextShape } from '../../src/domain/leaf/TextShape.js';
-import { ShapeError } from '../../src/domain/ShapeError.js';
+import { Container } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Ellipse } from '@svgframe/kernel';
+import { Line } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { TextShape } from '@svgframe/kernel';
+import { ShapeError } from '@svgframe/kernel';
 
 /** 作业 §4.1 的 set 白名单：各类型自身几何属性 + 三个公共样式属性。 */
 const COMMON = ['fill', 'stroke', 'stroke-width'];

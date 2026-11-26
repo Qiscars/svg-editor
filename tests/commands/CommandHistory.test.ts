@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Command } from '../../src/commands/Command.js';
-import { CommandContext } from '../../src/commands/CommandContext.js';
-import { CommandHistory } from '../../src/commands/CommandHistory.js';
-import { Document } from '../../src/domain/Document.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
+import type { Command } from '@svgframe/kernel';
+import { CommandContext } from '@svgframe/kernel';
+import { CommandHistory } from '@svgframe/kernel';
+import { Document } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { createTestServices } from '../helpers/kernel.js';
 
 /**
  * 测试替身：把"执行/撤销"变成可观察的记录。
@@ -157,7 +158,7 @@ describe('CommandContext', () => {
     const document = new Document(800, 600);
     const rect = new Rect('r1', 0, 0, 10, 10);
     document.attach(document.canvas, rect);
-    const context = new CommandContext(document);
+    const context = new CommandContext(document, createTestServices());
 
     expect(context.document).toBe(document);
     expect(context.require('r1')).toBe(rect);

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { EditorApp } from '../../src/app/EditorApp.js';
-import { createDefaultCommandRegistry } from '../../src/cli/DefaultCommandRegistry.js';
-import { CommandRegistry } from '../../src/registry/CommandRegistry.js';
+import { EditorApp } from '@svgframe/kernel';
+import { createTestApp, createTestComposition } from '../helpers/kernel.js';
+import { CommandRegistry } from '@svgframe/kernel';
 
 describe('CommandRegistry', () => {
   it('注册后可按名字取到', () => {
@@ -48,12 +48,12 @@ describe('CommandRegistry', () => {
     const registry = new CommandRegistry<object>();
     const spec = { name: 'dup', usage: 'dup', summary: '', minArgs: 0, maxArgs: 0, run: () => [] };
     registry.register(spec);
-    expect(() => registry.register(spec)).toThrowError('command already registered: dup');
+    expect(() => registry.register(spec)).toThrowError('duplicate registration: commands/dup');
   });
 });
 
 describe('默认命令表', () => {
-  const registry = createDefaultCommandRegistry();
+  const registry = createTestComposition().commands;
 
   it('覆盖作业 §3 命令总表的全部命令', () => {
     const names = registry.list().map((spec) => spec.name);
@@ -90,14 +90,14 @@ describe('默认命令表', () => {
   });
 
   it('help 命令输出表头与全部行', () => {
-    const app = new EditorApp();
+    const app = createTestApp();
     const lines = registry.execute(app, 'help', []);
     expect(lines[0]).toBe('Commands:');
     expect(lines).toHaveLength(registry.list().length + 1);
   });
 
   it('加一条命令只需注册一次，help 自动包含它（R3 已消除）', () => {
-    const custom = createDefaultCommandRegistry();
+    const custom = createTestComposition().commands;
     const before = custom.helpLines().length;
     custom.register({
       name: 'zoom',

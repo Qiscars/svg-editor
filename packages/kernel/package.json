@@ -1,0 +1,22 @@
+{
+  "name": "@svgframe/kernel",
+  "version": "0.2.0",
+  "private": true,
+  "description": "SVG 编辑器内核：领域模型、命令、持久化、扩展点",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

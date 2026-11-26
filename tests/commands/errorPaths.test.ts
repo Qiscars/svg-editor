@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { EditorApp } from '../../src/app/EditorApp.js';
-import { CommandParser } from '../../src/cli/CommandParser.js';
-import { createDefaultCommandRegistry } from '../../src/cli/DefaultCommandRegistry.js';
-import type { CommandRegistry } from '../../src/registry/CommandRegistry.js';
+import { EditorApp } from '@svgframe/kernel';
+import { CommandParser } from '@svgframe/host';
+import { createTestApp, createTestComposition } from '../helpers/kernel.js';
+import type { CommandRegistry } from '@svgframe/kernel';
 import { snapshotDocument } from '../helpers/snapshot.js';
 
 interface Attempt {
@@ -12,7 +12,8 @@ interface Attempt {
 }
 
 const parser = new CommandParser();
-const registry: CommandRegistry<EditorApp> = createDefaultCommandRegistry();
+const registry: CommandRegistry<EditorApp> = createTestComposition().commands;
+const defaultApp = createTestApp();
 
 function attempt(app: EditorApp, line: string): Attempt {
   const invocation = parser.parse(line);
@@ -28,7 +29,7 @@ function attempt(app: EditorApp, line: string): Attempt {
 
 /** 作业 §6 同款起始文档：bg / title / c1 / box 四个顶层元素。 */
 function setup(): EditorApp {
-  const app = new EditorApp();
+  const app = createTestApp();
   attempt(app, 'init 800 600');
   attempt(app, 'create rect bg 0 0 800 600 #ffffff');
   attempt(app, 'create text title 20 40 "My Diagram"');
@@ -137,7 +138,7 @@ describe('作业 §4.2 错误信息逐条覆盖', () => {
   });
 
   it('11. 未 read/init 就执行命令', () => {
-    const app = new EditorApp();
+    const app = createTestApp();
     for (const line of ['move c1 1 2', 'undo', 'redo', 'tree', 'show c1', 'save']) {
       const result = attempt(app, line);
       expect(result.error).toBe("no document. use 'init' or 'read' first");

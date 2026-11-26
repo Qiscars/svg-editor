@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { ShowRenderer } from '../../src/cli/render/ShowRenderer.js';
-import { TreeRenderer } from '../../src/cli/render/TreeRenderer.js';
-import { Document } from '../../src/domain/Document.js';
-import { Container } from '../../src/domain/Container.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
-import { TextShape } from '../../src/domain/leaf/TextShape.js';
+import { ShowRenderer } from '@svgframe/host';
+import { TreeRenderer } from '@svgframe/host';
+import { Document } from '@svgframe/kernel';
+import { Container } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { TextShape } from '@svgframe/kernel';
+import { createTestServices } from '../helpers/kernel.js';
 
 /** 与作业 §5.1 例 1 完全相同的文档。 */
 function exampleDocument(): Document {
@@ -29,7 +30,7 @@ function exampleDocument(): Document {
 }
 
 describe('TreeRenderer', () => {
-  const renderer = new TreeRenderer();
+  const renderer = new TreeRenderer(createTestServices().decorators);
 
   it('与作业 §5.1 例 1 逐字一致', () => {
     expect(renderer.render(exampleDocument())).toEqual([

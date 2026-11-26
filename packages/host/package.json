@@ -1,0 +1,28 @@
+{
+  "name": "@svgframe/host",
+  "version": "0.2.0",
+  "private": true,
+  "description": "SVG 编辑器的 CLI 宿主：解析、渲染、装配与插件加载",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "svgframe": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@svgframe/kernel": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

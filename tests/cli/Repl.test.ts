@@ -1,7 +1,8 @@
 import { Readable, Writable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
 
-import { Repl } from '../../src/cli/Repl.js';
+import { Repl } from '@svgframe/host';
+import { createTestComposition } from '../helpers/kernel.js';
 
 /** 把 REPL 的输出收集成字符串，便于逐行断言。 */
 class Collector extends Writable {
@@ -25,7 +26,8 @@ class Collector extends Writable {
 async function runScript(script: readonly string[]): Promise<string[]> {
   const input = Readable.from(script.map((line) => `${line}\n`));
   const output = new Collector();
-  const repl = new Repl(input, output);
+  const { app, commands } = createTestComposition();
+  const repl = new Repl(input, output, app, commands);
   await repl.run();
   return output.lines;
 }

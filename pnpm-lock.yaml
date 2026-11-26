@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@svgframe/host':
+        specifier: workspace:*
+        version: link:packages/host
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:packages/kernel
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
@@ -17,6 +23,28 @@ importers:
       vitest:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5))
+
+  packages/host:
+    dependencies:
+      '@svgframe/kernel':
+        specifier: workspace:*
+        version: link:../kernel
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/kernel:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
 
 packages:
 

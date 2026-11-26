@@ -1,21 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import { CommandContext } from '../../src/commands/CommandContext.js';
-import { CommandHistory } from '../../src/commands/CommandHistory.js';
-import { AddToCommand } from '../../src/commands/impl/AddToCommand.js';
-import { CreateShapeCommand } from '../../src/commands/impl/CreateShapeCommand.js';
-import { DeleteShapeCommand } from '../../src/commands/impl/DeleteShapeCommand.js';
-import { GroupCommand } from '../../src/commands/impl/GroupCommand.js';
-import { MoveShapeCommand } from '../../src/commands/impl/MoveShapeCommand.js';
-import { ReorderCommand } from '../../src/commands/impl/ReorderCommand.js';
-import { ScaleShapeCommand } from '../../src/commands/impl/ScaleShapeCommand.js';
-import { SetAttributeCommand } from '../../src/commands/impl/SetAttributeCommand.js';
-import { UngroupCommand } from '../../src/commands/impl/UngroupCommand.js';
-import { Document } from '../../src/domain/Document.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
-import { TextShape } from '../../src/domain/leaf/TextShape.js';
+import { CommandContext } from '@svgframe/kernel';
+import { CommandHistory } from '@svgframe/kernel';
+import { AddToCommand } from '@svgframe/kernel';
+import { CreateShapeCommand } from '@svgframe/kernel';
+import { DeleteShapeCommand } from '@svgframe/kernel';
+import { GroupCommand } from '@svgframe/kernel';
+import { MoveShapeCommand } from '@svgframe/kernel';
+import { ReorderCommand } from '@svgframe/kernel';
+import { ScaleShapeCommand } from '@svgframe/kernel';
+import { SetAttributeCommand } from '@svgframe/kernel';
+import { UngroupCommand } from '@svgframe/kernel';
+import { Document } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { TextShape } from '@svgframe/kernel';
 import { snapshotDocument } from '../helpers/snapshot.js';
+import { createTestServices } from '../helpers/kernel.js';
 
 interface Fixture {
   readonly document: Document;
@@ -38,7 +39,7 @@ function fixture(): Fixture {
   document.attach(document.canvas, c1);
   document.attach(document.canvas, box);
 
-  return { document, context: new CommandContext(document), history: new CommandHistory() };
+  return { document, context: new CommandContext(document, createTestServices()), history: new CommandHistory() };
 }
 
 /** 一条命令的完整往返：执行 → undo 回到原状 → redo 回到执行后。 */

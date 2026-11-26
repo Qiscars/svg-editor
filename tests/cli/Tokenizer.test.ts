@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { CommandParser } from '../../src/cli/CommandParser.js';
-import { Tokenizer } from '../../src/cli/Tokenizer.js';
+import { CommandParser } from '@svgframe/host';
+import { Tokenizer } from '@svgframe/host';
 
 describe('Tokenizer', () => {
   it('按空白切分', () => {

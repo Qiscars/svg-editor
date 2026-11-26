@@ -5,10 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { EditorApp } from '../../src/app/EditorApp.js';
-import { Repl } from '../../src/cli/Repl.js';
-import { FileGateway } from '../../src/io/FileGateway.js';
-import { ShapeError } from '../../src/domain/ShapeError.js';
+import { EditorApp } from '@svgframe/kernel';
+import { Repl } from '@svgframe/host';
+import { FileGateway } from '@svgframe/kernel';
+import { ShapeError } from '@svgframe/kernel';
+import { createTestComposition, createTestApp } from '../helpers/kernel.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCENARIOS = join(ROOT, 'doc', 'scenarios');
@@ -59,7 +60,8 @@ async function replay(script: string, files: InMemoryFileGateway): Promise<strin
   const lines = script.split('\n').filter((line, index, all) => !(line === '' && index === all.length - 1));
   const input = Readable.from(lines.map((line) => `${line}\n`));
   const output = new Collector();
-  const repl = new Repl(input, output, new EditorApp(files));
+  const { app, commands } = createTestComposition(files);
+  const repl = new Repl(input, output, app, commands);
   await repl.run();
   return output.text;
 }
@@ -134,7 +136,7 @@ describe('场景回放：作业 §6.1 两节点流程图', () => {
 
     const reopened = new InMemoryFileGateway();
     reopened.files.set('flowchart.svg', saved ?? '');
-    const app = new EditorApp(reopened);
+    const app = createTestApp(reopened);
     const messages = app.read('flowchart.svg');
 
     expect(messages).toEqual(['read flowchart.svg (8 elements)']);

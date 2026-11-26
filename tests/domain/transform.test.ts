@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { Canvas } from '../../src/domain/Canvas.js';
-import { Container } from '../../src/domain/Container.js';
-import { Document } from '../../src/domain/Document.js';
-import { Circle } from '../../src/domain/leaf/Circle.js';
-import { Ellipse } from '../../src/domain/leaf/Ellipse.js';
-import { Line } from '../../src/domain/leaf/Line.js';
-import { Rect } from '../../src/domain/leaf/Rect.js';
-import { TextShape } from '../../src/domain/leaf/TextShape.js';
+import { Canvas } from '@svgframe/kernel';
+import { Container } from '@svgframe/kernel';
+import { Document } from '@svgframe/kernel';
+import { Circle } from '@svgframe/kernel';
+import { Ellipse } from '@svgframe/kernel';
+import { Line } from '@svgframe/kernel';
+import { Rect } from '@svgframe/kernel';
+import { TextShape } from '@svgframe/kernel';
 
 /** 建一份与作业 §5.1 结构相同的文档：svg → bg / title / g#markers → c1 / box */
 function sampleDocument(): Document {
