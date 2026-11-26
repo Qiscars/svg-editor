@@ -1,0 +1,82 @@
+@startuml
+' Phase 2 的组件图：内核 / 宿主 / 插件三类包，以及四个扩展点
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName "Microsoft YaHei"
+skinparam shadowing false
+left to right direction
+
+package "packages/kernel（内核）" {
+  package "domain" {
+    [Shape / Container]
+    [Document]
+  }
+  package "extensions（纯契约层）" {
+    [ShapeProvider]
+    [CommandSpec]
+    [TreeDecorator]
+    [AttributeHandler]
+    [PluginContext]
+  }
+  [ShapeRegistry]
+  [CommandRegistry]
+  [TreeDecoratorRegistry]
+  [AttributeHandlerRegistry]
+  [EditorApp]
+  [SvgParser / SvgSerializer]
+}
+
+package "packages/host（宿主 / 装配）" {
+  [Repl]
+  [TreeRenderer]
+  [CommandRegistry 装配]
+  [PluginLoader]
+  [PluginComposition（组合根）]
+  [ConfiguredComposition]
+  [main]
+}
+
+package "plugins/*（插件包）" {
+  [shape-box]
+  [command-stats]
+  [command-dir]
+  [tree-star]
+}
+
+package "packages/vscode-svg（VSCode 扩展）" {
+  [OutlineBuilder]
+  [FileDecorationProvider]
+  [DocumentSymbolProvider]
+}
+
+[ShapeRegistry] ..|> [ShapeProvider]
+[CommandRegistry] ..|> [CommandSpec]
+[TreeDecoratorRegistry] ..|> [TreeDecorator]
+[AttributeHandlerRegistry] ..|> [AttributeHandler]
+[PluginContext] --> [ShapeRegistry]
+[PluginContext] --> [CommandRegistry]
+[PluginContext] --> [TreeDecoratorRegistry]
+[PluginContext] --> [AttributeHandlerRegistry]
+
+[EditorApp] --> [ShapeRegistry]
+[EditorApp] --> [TreeDecoratorRegistry]
+[SvgParser / SvgSerializer] --> [ShapeRegistry]
+[TreeRenderer] --> [TreeDecoratorRegistry]
+
+[PluginComposition（组合根）] --> [shape-box]
+[PluginComposition（组合根）] --> [command-stats]
+[PluginComposition（组合根）] --> [command-dir]
+[PluginComposition（组合根）] --> [tree-star]
+[ConfiguredComposition] --> [PluginLoader]
+[PluginLoader] ..> [plugins/*（插件包）] : import(字符串)
+[main] --> [PluginComposition（组合根）]
+[main] --> [ConfiguredComposition]
+
+[shape-box] ..> [PluginContext] : 只依赖内核公开 API
+[command-stats] ..> [PluginContext]
+[command-dir] ..> [PluginContext]
+[tree-star] ..> [PluginContext]
+
+[OutlineBuilder] ..> [DocumentSymbolProvider]
+[FileDecorationProvider] ..> [OutlineBuilder] : 独立的解析器
+@enduml

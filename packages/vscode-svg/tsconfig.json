@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    // VSCode 1.85 的扩展宿主通过 require() 加载扩展，所以本包必须输出 CommonJS；
+    // 而基类的 verbatimModuleSyntax 不允许在 CommonJS 中写 ESM 语法，故在此关闭。
+    // 其余严格性选项（strict / noUncheckedIndexedAccess / NodeNext…）全部继承。
+    "verbatimModuleSyntax": false
   },
   "include": ["src/**/*.ts"]
 }

@@ -84,8 +84,9 @@ function symbolKindFor(tagName: string): vscode.SymbolKind {
     case 'tspan':
       return vscode.SymbolKind.String;
     case 'image':
+      return vscode.SymbolKind.File;
     case 'use':
-      return vscode.SymbolKind.Reference;
+      return vscode.SymbolKind.Variable;
     default:
       return vscode.SymbolKind.Object;
   }
