@@ -14,6 +14,18 @@ importers:
       '@svgframe/kernel':
         specifier: workspace:*
         version: link:packages/kernel
+      '@svgframe/plugin-command-dir':
+        specifier: workspace:*
+        version: link:plugins/command-dir
+      '@svgframe/plugin-command-stats':
+        specifier: workspace:*
+        version: link:plugins/command-stats
+      '@svgframe/plugin-shape-box':
+        specifier: workspace:*
+        version: link:plugins/shape-box
+      '@svgframe/plugin-tree-star':
+        specifier: workspace:*
+        version: link:plugins/tree-star
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5

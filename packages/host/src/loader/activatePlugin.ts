@@ -1,5 +1,5 @@
 import type { EditorApp, PluginCategory, PluginManifest, PluginTargets, SvgFramePlugin } from '@svgframe/kernel';
-import { PluginContextImpl } from '@svgframe/kernel';
+import { PluginContextImpl, RegistryError } from '@svgframe/kernel';
 
 const CATEGORIES: readonly PluginCategory[] = ['shapes', 'commands', 'decorators', 'attributes'];
 
@@ -25,6 +25,10 @@ export function activatePlugin(
     plugin.activate(context);
   } catch (error) {
     context.rollback();
+    // 注册名冲突有自己的一行文案（作业 §6 的格式表），不包裹成"激活失败"
+    if (error instanceof RegistryError && error.message.startsWith('duplicate registration:')) {
+      return { ok: false, error: `error: ${error.message}` };
+    }
     return {
       ok: false,
       error: `error: plugin failed to activate: ${plugin.name} (${reasonOf(error)})`,

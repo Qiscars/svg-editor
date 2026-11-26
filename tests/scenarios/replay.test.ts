@@ -60,7 +60,7 @@ async function replay(script: string, files: InMemoryFileGateway): Promise<strin
   const lines = script.split('\n').filter((line, index, all) => !(line === '' && index === all.length - 1));
   const input = Readable.from(lines.map((line) => `${line}\n`));
   const output = new Collector();
-  const { app, commands } = createTestComposition(files);
+  const { app, commands } = createTestComposition({ files });
   const repl = new Repl(input, output, app, commands);
   await repl.run();
   return output.text;

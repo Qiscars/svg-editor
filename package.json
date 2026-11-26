@@ -21,6 +21,10 @@
   "devDependencies": {
     "@svgframe/host": "workspace:*",
     "@svgframe/kernel": "workspace:*",
+    "@svgframe/plugin-command-dir": "workspace:*",
+    "@svgframe/plugin-command-stats": "workspace:*",
+    "@svgframe/plugin-shape-box": "workspace:*",
+    "@svgframe/plugin-tree-star": "workspace:*",
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

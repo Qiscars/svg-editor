@@ -1,4 +1,4 @@
-import type { CommandRegistry, EditorApp, EditorServices } from '@svgframe/kernel';
+import type { EditorApp, EditorServices, SvgFramePlugin } from '@svgframe/kernel';
 import {
   AttributeHandlerRegistry,
   builtinShapeProviders,
@@ -8,14 +8,14 @@ import {
   ShapeRegistry,
   TreeDecoratorRegistry,
 } from '@svgframe/kernel';
-import { registerBuiltinCommands } from '@svgframe/host';
+import { activatePlugin, registerBuiltinCommands } from '@svgframe/host';
 
 /**
  * 测试用的最小装配。
  *
  * 与宿主的默认装配走同一条路径：建三个空注册表 → 注册六种内置图形 →
- * 建 `EditorApp` → 注册 17 条内置命令。插件测试需要什么就自己再往上注册，
- * 不共享任何全局状态，因此每个用例互不干扰。
+ * 建 `EditorApp` → 注册 17 条内置命令。插件测试在此基础上按需追加，
+ * 每个用例互不干扰（没有全局状态）。
  */
 export function createTestServices(): EditorServices {
   const shapes = new ShapeRegistry();
@@ -32,18 +32,40 @@ export function createTestServices(): EditorServices {
 export interface TestComposition {
   readonly services: EditorServices;
   readonly app: EditorApp;
-  readonly commands: CommandRegistry<EditorApp>;
+  readonly commands: import('@svgframe/kernel').CommandRegistry<EditorApp>;
+  readonly errors: readonly string[];
 }
 
-export function createTestComposition(files: FileGateway = new FileGateway()): TestComposition {
+export interface TestCompositionOptions {
+  readonly plugins?: readonly SvgFramePlugin<EditorApp>[];
+  readonly files?: FileGateway;
+}
+
+export function createTestComposition(options: TestCompositionOptions = {}): TestComposition {
   const services = createTestServices();
-  const app = new EditorAppClass(services, files);
+  const app = new EditorAppClass(services, options.files ?? new FileGateway());
   const commands = new CommandRegistryClass<EditorApp>();
   registerBuiltinCommands(commands, { shapes: services.shapes, decorators: services.decorators });
-  return { services, app, commands };
+
+  const targets = {
+    shapes: services.shapes,
+    commands,
+    decorators: services.decorators,
+    attributes: services.attributes,
+  };
+
+  const errors: string[] = [];
+  for (const plugin of options.plugins ?? []) {
+    const outcome = activatePlugin(plugin, targets);
+    if (!outcome.ok) {
+      errors.push(outcome.error);
+    }
+  }
+
+  return { services, app, commands, errors };
 }
 
 /** 只要一个可用的 `EditorApp` 时的便捷入口。 */
 export function createTestApp(files: FileGateway = new FileGateway()): EditorApp {
-  return createTestComposition(files).app;
+  return createTestComposition({ files }).app;
 }

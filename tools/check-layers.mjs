@@ -7,7 +7,8 @@
  * 1. **内核不依赖任何具体实现**：`packages/kernel` 不得 import 宿主或任何插件。
  * 2. **插件不依赖宿主装配**：`plugins/*` 只能 import `@svgframe/kernel` 的公开 API
  *    与自己包内的文件；不得 import `@svgframe/host`，也不得走内核内部路径。
- * 3. **内核内部保持 Phase 1 的分层**：domain → commands/io → extensions/app
+ * 3. **内核不认识任何具体插件**：除组合根 ssembly/PluginComposition.ts 外，@svgframe/plugin-* 不得出现；
+ * 4. **内核内部保持 Phase 1 的分层**：domain → commands/io → extensions/app
  *    的依赖方向不能倒过来（`domain` 不认识 XML、不认识命令行）。
  *
  * 违规即退出码 1。
@@ -138,6 +139,15 @@ for (const file of sources) {
     if (specifier === '@svgframe/host') {
       if (owner !== 'host') {
         report(file, line, `${owner} 不允许依赖宿主装配模块 @svgframe/host`, specifier);
+      }
+      continue;
+    }
+
+    if (specifier.startsWith('@svgframe/plugin-')) {
+      // 只有"代码装配的组合根"允许认识具体插件；内核与宿主其他地方一律不许
+      const isCompositionRoot = relative(ROOT, file).split(sep).join('/') === 'packages/host/src/assembly/PluginComposition.ts';
+      if (!isCompositionRoot) {
+        report(file, line, '只有组合根可以 import 具体插件包', specifier);
       }
       continue;
     }

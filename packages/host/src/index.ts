@@ -15,3 +15,11 @@ export { historyCommandHandlers } from './cli/handlers/HistoryCommandHandlers.js
 
 export { createDefaultComposition, createEmptyServices } from './assembly/Composition.js';
 export type { Composition } from './assembly/Composition.js';
+
+export { activatePlugin } from './loader/activatePlugin.js';
+export type { ActivationOutcome } from './loader/activatePlugin.js';
+export { PluginLoader } from './loader/PluginLoader.js';
+export type { LoadReport, PluginConfig, PluginConfigEntry } from './loader/PluginLoader.js';
+export { createConfiguredComposition } from './assembly/ConfiguredComposition.js';
+export { createCodeAssembledComposition } from './assembly/PluginComposition.js';
+export { createServicesWithBuiltins } from './assembly/Composition.js';

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -63,20 +64,20 @@ export class PluginLoader {
       if (entry.enabled === false) {
         continue;
       }
-      const specifier = resolveSpecifier(entry.module, baseDir);
+      const resolved = resolveSpecifier(entry.module, baseDir);
+
+      // 先确认**这个模块本身**能不能被解析到：
+      // 之后 import() 再失败，就一定是它自己的求值/依赖问题，而不是"插件找不到"。
+      if (!resolved.ok) {
+        errors.push(`error: plugin not found: ${entry.module}`);
+        continue;
+      }
 
       let module: Record<string, unknown>;
       try {
-        module = (await import(specifier)) as Record<string, unknown>;
+        module = (await import(resolved.specifier)) as Record<string, unknown>;
       } catch (error) {
-        if (isModuleNotFound(error)) {
-          errors.push(`error: plugin not found: ${entry.module}`);
-        } else {
-          // 模块找到了但求值失败（依赖缺失、语法错误等）——属于插件加载失败
-          errors.push(
-            `error: plugin failed to activate: ${entry.module} (${reasonOf(error)})`,
-          );
-        }
+        errors.push(`error: plugin failed to activate: ${entry.module} (${reasonOf(error)})`);
         continue;
       }
 
@@ -105,18 +106,25 @@ export class PluginLoader {
   }
 }
 
-/** 相对路径以配置文件所在目录为基准；包名按运行环境的解析规则原样 import。 */
-function resolveSpecifier(module: string, baseDir: string): string {
-  if (module.startsWith('./') || module.startsWith('../')) {
+/**
+ * 把配置里的模块串解析成可 import 的说明符，并**预先判断它是否真的存在**。
+ *
+ * 相对路径以配置文件所在目录为基准；包名用 import.meta.resolve 走与
+ * 动态 import 相同的解析规则。这一步是"插件找不到"与"插件加载失败"的分界线。
+ */
+function resolveSpecifier(
+  module: string,
+  baseDir: string,
+): { ok: true; specifier: string } | { ok: false } {
+  if (module.startsWith('./') || module.startsWith('../') || isAbsolute(module)) {
     const absolute = isAbsolute(module) ? module : resolve(baseDir, module);
-    return pathToFileURL(absolute).href;
+    return existsSync(absolute) ? { ok: true, specifier: pathToFileURL(absolute).href } : { ok: false };
   }
-  return module;
-}
-
-function isModuleNotFound(error: unknown): boolean {
-  const code = (error as { code?: string } | null)?.code;
-  return code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND';
+  try {
+    return { ok: true, specifier: import.meta.resolve(module) };
+  } catch {
+    return { ok: false };
+  }
 }
 
 function reasonOf(error: unknown): string {
