@@ -51,7 +51,7 @@ describe('box 图形插件', () => {
     app.createShape('g', 'outer', [], undefined, null);
     app.createShape('box', 'n1', ['0', '0', '100', '40', 'A'], undefined, 'outer');
     app.moveShape('n1', 10, 20);
-    expect(app.document.require('n1-rect').describeInline()).toBe('x=10 y=20 w=100 h=40');
+    expect(app.document.require('n1-rect').describeInline()).toBe('x=10 y=20 w=100 h=40 fill=#4a90d9');
   });
 
   it('ungroup 被拒绝（内部结构归插件所有）', () => {
@@ -71,7 +71,8 @@ describe('box 图形插件', () => {
     expect(app.document.require('n1-rect').getAttribute('fill')).toBe('#f5a623');
 
     expect(app.undo()).toContain('fill');
-    expect(app.document.require('n1-rect').getAttribute('fill')).toBeUndefined();
+    // 模板默认色是 #4a90d9，undo 只回到它，而不是"无填充"
+    expect(app.document.require('n1-rect').getAttribute('fill')).toBe('#4a90d9');
 
     app.redo();
     expect(app.document.require('n1-rect').getAttribute('fill')).toBe('#f5a623');

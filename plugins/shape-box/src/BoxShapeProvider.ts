@@ -28,7 +28,10 @@ export class BoxShapeProvider implements ShapeProvider {
     const text = readText(values, 4, 'text');
 
     const box = new BoxShape(id);
-    box.appendChild(new Rect(BoxShape.rectIdOf(id), x, y, width, height));
+    const rect = new Rect(BoxShape.rectIdOf(id), x, y, width, height);
+    // 插件模板自带的默认填充：Phase 1 §6.1 版本 B 的会话要求开箱即有颜色
+    rect.setAttribute('fill', DEFAULT_FILL);
+    box.appendChild(rect);
     box.appendChild(new TextShape(BoxShape.labelIdOf(id), labelX(x, width), labelY(y, height), text));
     return box;
   }
@@ -65,6 +68,9 @@ export class BoxShapeProvider implements ShapeProvider {
     );
   }
 }
+
+/** 模板默认填充色（与 Phase 1 §6.1 版本 B 的示例一致） */
+const DEFAULT_FILL = '#4a90d9';
 
 /** 标题的左内边距 */
 const LABEL_PADDING_X = 20;

@@ -22,6 +22,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ENTRY = join(ROOT, 'packages', 'host', 'dist', 'main.js');
 const CONFIG = join(ROOT, 'plugins.config.json');
 const BASELINE_CONFIG = join(ROOT, 'plugins.baseline.json');
+const BOX_ONLY_CONFIG = join(ROOT, 'plugins.box-only.json');
 const WORK = join(ROOT, 'out', 'assembly-work');
 const LOGS = join(ROOT, 'out', 'assembly-logs');
 
@@ -84,6 +85,26 @@ function comparePair(name, transcript) {
   return false;
 }
 
+/**
+ * Phase 1 §6.1 版本 B 的会话复现：**只装 shape-box**，与规范原文对拍。
+ *
+ * 与规范正文的差异只有两类，都源于规范自身的不自洽（见 doc/README.md §7.7）：
+ * 1. 列宽：规范块里 rect 行的属性列在 26、text 行在 27，任何统一对齐规则都无法同时命中；
+ * 2. 规范块省略了线段的 stroke=black（而同一份规范的 §5.1 是显示的）。
+ * 语义、结构与其余文字逐字一致。
+ */
+function compareBoxSpec() {
+  buildFixture();
+  const actual = run(['--config', BOX_ONLY_CONFIG], join(ROOT, 'doc', 'transcript', 'cli-2-box.txt'), WORK);
+  const golden = readFileSync(join(ROOT, 'doc', 'transcript', 'cli-2-box.golden.txt'), 'utf8').replace(/\r\n/g, '\n');
+  if (actual.trimEnd() === golden.trimEnd()) {
+    console.log('  ✓ §6.1-B: 只装 shape-box 时会话完整复现（' + (actual.split('\n').length - 1) + ' 行）');
+    return true;
+  }
+  console.log('  ✗ §6.1-B: 与 golden 不一致');
+  return false;
+}
+
 function compareBaseline(transcript, goldenPath) {
   buildFixture();
   const baseline = run(['--config', BASELINE_CONFIG], transcript, WORK);
@@ -105,6 +126,9 @@ for (const [name, file] of [
 ]) {
   ok = comparePair(name, file) && ok;
 }
+
+console.log('Phase 1 §6.1 版本 B 复现');
+ok = compareBoxSpec() && ok;
 
 console.log('基线回归');
 // 基线与 golden 必须用同一份输入（golden 里含脚本注释的回显）

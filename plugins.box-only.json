@@ -1,0 +1,5 @@
+{
+  "plugins": [
+    { "module": "@svgframe/plugin-shape-box" }
+  ]
+}
