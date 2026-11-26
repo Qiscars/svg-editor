@@ -1,0 +1,12 @@
+{
+  // 演示用工作区设置（仅影响这个示例文件夹）。
+  //
+  // VSCode 对 .svg 默认会用「图片预览」打开，那是个图像编辑器而不是文本编辑器，
+  // 因此原生 Outline 拿不到任何符号信息（会显示 "The active editor cannot provide
+  // outline information."）。这里把 .svg 强制交回文本编辑器，大纲才会出现。
+  //
+  // 手工等效操作：右键文件 → Open With… → Text Editor。
+  "workbench.editorAssociations": {
+    "*.svg": "default"
+  }
+}

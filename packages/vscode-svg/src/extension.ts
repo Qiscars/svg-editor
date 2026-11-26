@@ -12,10 +12,25 @@
 import * as vscode from 'vscode';
 
 import { OutlineBuilder, type OutlineNode, type OutlineRange } from './OutlineBuilder.js';
-import { SVG_FILE_BADGE, isSvgPath } from './fileBadge.js';
+import { SVG_FILE_BADGE, isSvgDocument, isSvgPath } from './fileBadge.js';
 
-const SVG_LANGUAGE_ID = 'svg';
 const FOCUS_OUTLINE_COMMAND = 'svgframe.focusOutline';
+
+/**
+ * 大纲 provider 的文档选择器。
+ *
+ * **不能只写 `{ language: 'svg' }`**：VSCode 内置把 `.svg` 关联到 `xml` 语言
+ * （并不存在内置的 `svg` 语言 id），那样 provider 永远不会被调用，
+ * Outline 只会显示 "No symbols found in document"。
+ *
+ * 所以这里用「路径 glob」作为主判据，`svg` 语言作为补充（将来若有扩展
+ * 或用户把 .svg 的默认语言改成 svg，也照样命中）。
+ */
+const SVG_DOCUMENT_SELECTOR: vscode.DocumentFilter[] = [
+  { language: 'svg' },
+  { pattern: '**/*.svg' },
+  { pattern: '**/*.SVG' },
+];
 
 /** 在 Explorer 中给 `.svg` 文件加 `[]` 徽标（不重命名、不改内容）。 */
 class SvgFileDecorationProvider implements vscode.FileDecorationProvider {
@@ -98,13 +113,13 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.window.registerFileDecorationProvider(new SvgFileDecorationProvider()),
     vscode.languages.registerDocumentSymbolProvider(
-      { language: SVG_LANGUAGE_ID },
+      SVG_DOCUMENT_SELECTOR,
       symbols,
       { label: 'SVG Outline' },
     ),
     symbols,
     vscode.workspace.onDidChangeTextDocument((event) => {
-      if (event.document.languageId === SVG_LANGUAGE_ID) {
+      if (isSvgDocument(event.document.languageId, event.document.uri.path)) {
         symbols.refresh(event.document);
       }
     }),
