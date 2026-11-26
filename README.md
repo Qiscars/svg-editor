@@ -105,7 +105,7 @@ pnpm --filter svgframe-vscode run build
 ## 文档 PDF（提交用）
 
 作业平台要求上传**一份文件**，所以文档除了 Markdown 原稿，还提供了一份自包含的
-[`doc/README.pdf`](doc/README.pdf)。重新生成：
+[`doc/README.pdf`](doc/README.pdf)（已随 Phase 2 重新生成，图片内联）。重新生成：
 
 ```bash
 node tools/md-to-html.mjs                       # Markdown → 自包含 HTML
